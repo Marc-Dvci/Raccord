@@ -1,0 +1,429 @@
+{
+  "uid": "ap-incident",
+  "title": "AccessPulse / Incident investigation",
+  "description": "Evidence retrieved through Grafana MCP during an accessibility incident, plus the post-action verification.",
+  "tags": [
+    "accesspulse",
+    "incident",
+    "captions"
+  ],
+  "timezone": "utc",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "refresh": "10s",
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "language",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "ap-prom"
+        },
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "label": "Language",
+        "query": {
+          "query": "label_values(accesspulse_caption_drift_seconds, language)"
+        }
+      },
+      {
+        "name": "territory",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "ap-prom"
+        },
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "label": "Territory",
+        "query": {
+          "query": "label_values(accesspulse_caption_drift_seconds, territory)"
+        }
+      },
+      {
+        "name": "player_version",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "ap-prom"
+        },
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "label": "Player build",
+        "query": {
+          "query": "label_values(accesspulse_caption_drift_seconds, player_version)"
+        }
+      }
+    ]
+  },
+  "annotations": {
+    "list": [
+      {
+        "name": "AccessPulse actions",
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "iconColor": "purple",
+        "target": {
+          "type": "tags",
+          "matchAny": true,
+          "tags": [
+            "accesspulse",
+            "approved-action",
+            "recovery"
+          ]
+        }
+      },
+      {
+        "name": "Deployments and configuration",
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "iconColor": "orange",
+        "target": {
+          "type": "tags",
+          "matchAny": true,
+          "tags": [
+            "deployment",
+            "config",
+            "change"
+          ]
+        }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "text",
+      "title": "Incident investigation",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 3
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "The evidence the AccessPulse agents retrieved through the Grafana MCP server, in the order they retrieved it. Every panel here corresponds to one MCP tool call recorded in the incident audit log."
+      }
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "1-3. Breached SLI over the incident window",
+      "description": "query_prometheus",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "ap-prom"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 3,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "accesspulse_caption_drift_seconds{language=~\"$language\",territory=~\"$territory\",player_version=~\"$player_version\"}",
+          "legendFormat": "{{language}} / {{territory}} / {{player_version}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "ap-prom"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1.5
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "4. Audience impact (k-anonymised aggregates)",
+      "description": "query_prometheus",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "ap-prom"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 3,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "accesspulse_sessions_caption_enabled{language=~\"$language\",territory=~\"$territory\",player_version=~\"$player_version\"}",
+          "legendFormat": "{{language}} / {{territory}} / {{player_version}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "ap-prom"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "type": "logs",
+      "title": "6. Component logs for the implicated pool",
+      "datasource": {
+        "type": "loki",
+        "uid": "ap-loki"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 11,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{service=~\"capenc-.*|clock-.*\"}",
+          "datasource": {
+            "type": "loki",
+            "uid": "ap-loki"
+          }
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "wrapLogMessage": true,
+        "sortOrder": "Descending"
+      }
+    },
+    {
+      "id": 5,
+      "type": "traces",
+      "title": "7. Media path trace",
+      "datasource": {
+        "type": "tempo",
+        "uid": "ap-tempo"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 11,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "traceql",
+          "query": "{ .component != \"\" }",
+          "datasource": {
+            "type": "tempo",
+            "uid": "ap-tempo"
+          }
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "12. Recovery verification",
+      "description": "Post-action series read back through MCP before the incident may close.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "ap-prom"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 20,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "accesspulse_caption_drift_seconds{language=~\"$language\",territory=~\"$territory\",player_version=~\"$player_version\"}",
+          "legendFormat": "{{language}} / {{territory}} / {{player_version}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "ap-prom"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1.5
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "type": "table",
+      "title": "Verification assertions",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "ap-prom"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 20,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "accesspulse_verification_assertion_status",
+          "format": "table",
+          "instant": true,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "ap-prom"
+          }
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {}
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "Value",
+            "desc": true
+          }
+        ]
+      }
+    }
+  ]
+}

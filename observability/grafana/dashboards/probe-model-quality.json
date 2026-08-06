@@ -1,0 +1,481 @@
+{
+  "uid": "ap-quality",
+  "title": "AccessPulse / Probe and model quality",
+  "description": "Precision, calibration, abstention and cost of the measurement layer itself.",
+  "tags": [
+    "accesspulse",
+    "model",
+    "quality"
+  ],
+  "timezone": "utc",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "refresh": "30s",
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
+  "templating": {
+    "list": []
+  },
+  "annotations": {
+    "list": [
+      {
+        "name": "AccessPulse actions",
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "iconColor": "purple",
+        "target": {
+          "type": "tags",
+          "matchAny": true,
+          "tags": [
+            "accesspulse",
+            "approved-action",
+            "recovery"
+          ]
+        }
+      },
+      {
+        "name": "Deployments and configuration",
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "iconColor": "orange",
+        "target": {
+          "type": "tags",
+          "matchAny": true,
+          "tags": [
+            "deployment",
+            "config",
+            "change"
+          ]
+        }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "text",
+      "title": "Probe and model quality",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 3
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "The probe fleet is measured like any other production dependency: latency, throughput, abstention rate, cross-probe disagreement and calibration. A model that is confidently wrong is an incident of its own."
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Probe abstention rate",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "ap-prom"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 3,
+        "w": 6,
+        "h": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "avg(accesspulse_probe_abstained_ratio)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "ap-prom"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Mean model confidence",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "ap-prom"
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 3,
+        "w": 6,
+        "h": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "avg(accesspulse_probe_confidence)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "ap-prom"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Probe fleet latency p95",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "ap-prom"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 3,
+        "w": 6,
+        "h": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max(accesspulse_probe_duration_ms)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "ap-prom"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Slices evaluated per sweep",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "ap-prom"
+      },
+      "gridPos": {
+        "x": 18,
+        "y": 3,
+        "w": 6,
+        "h": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max(accesspulse_slices_evaluated)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "ap-prom"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Caption semantic preservation",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "ap-prom"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "accesspulse_caption_semantic_score",
+          "legendFormat": "{{language}} / {{territory}} / {{player_version}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "ap-prom"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 0.9
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Caption omission rate",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "ap-prom"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "accesspulse_caption_omission_ratio",
+          "legendFormat": "{{language}} / {{territory}} / {{player_version}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "ap-prom"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 0.03
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 8,
+      "type": "flamegraph",
+      "title": "Probe fleet CPU profile",
+      "datasource": {
+        "type": "grafana-pyroscope-datasource",
+        "uid": "ap-pyro"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "profileTypeId": "process_cpu:cpu:nanoseconds",
+          "labelSelector": "{service_name=\"accesspulse-probe-fleet\"}",
+          "datasource": {
+            "type": "grafana-pyroscope-datasource",
+            "uid": "ap-pyro"
+          }
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "type": "flamegraph",
+      "title": "Agent CPU profile",
+      "datasource": {
+        "type": "grafana-pyroscope-datasource",
+        "uid": "ap-pyro"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 16,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "profileTypeId": "process_cpu:cpu:nanoseconds",
+          "labelSelector": "{service_name=\"accesspulse-agent\"}",
+          "datasource": {
+            "type": "grafana-pyroscope-datasource",
+            "uid": "ap-pyro"
+          }
+        }
+      ]
+    }
+  ]
+}

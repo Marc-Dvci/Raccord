@@ -1,0 +1,276 @@
+{
+  "generated": "2026-08-06T16:06:26+00:00",
+  "transport": "http",
+  "grafana_url": "http://grafana:3000",
+  "endpoint": "http://localhost:8000/mcp",
+  "connected": false,
+  "detail": "the connected Grafana MCP server does not expose required capabilities: list_alert_rules, get_alert_rule, query_tempo_traces (server advertises 65 tools)",
+  "server_tool_count": 65,
+  "server_tools": [
+    "add_activity_to_incident",
+    "alerting_manage_routing",
+    "alerting_manage_rules",
+    "analyze_loki_labels",
+    "check_datasources_health",
+    "create_annotation",
+    "create_datasource",
+    "create_folder",
+    "create_incident",
+    "create_snapshot",
+    "delete_snapshot",
+    "find_error_pattern_logs",
+    "find_slow_requests",
+    "generate_deeplink",
+    "get_alert_group",
+    "get_annotation_tags",
+    "get_annotations",
+    "get_assertions",
+    "get_current_oncall_users",
+    "get_dashboard_by_uid",
+    "get_dashboard_panel_queries",
+    "get_dashboard_property",
+    "get_dashboard_summary",
+    "get_datasource",
+    "get_incident",
+    "get_oncall_shift",
+    "get_panel_image",
+    "get_plugin",
+    "get_sift_analysis",
+    "get_sift_investigation",
+    "get_snapshot",
+    "grafana_api_request",
+    "install_plugin",
+    "list_alert_groups",
+    "list_datasources",
+    "list_incidents",
+    "list_loki_label_names",
+    "list_loki_label_values",
+    "list_oncall_schedules",
+    "list_oncall_teams",
+    "list_oncall_users",
+    "list_prometheus_label_names",
+    "list_prometheus_label_values",
+    "list_prometheus_metric_metadata",
+    "list_prometheus_metric_names",
+    "list_provisioning_repositories",
+    "list_pyroscope_label_names",
+    "list_pyroscope_label_values",
+    "list_pyroscope_profile_types",
+    "list_sift_investigations",
+    "list_snapshots",
+    "query_loki_logs",
+    "query_loki_patterns",
+    "query_loki_stats",
+    "query_prometheus",
+    "query_prometheus_histogram",
+    "query_pyroscope",
+    "search_dashboards",
+    "search_folders",
+    "search_plugin_information",
+    "suggest_loki_alloy_label_config",
+    "update_annotation",
+    "update_dashboard",
+    "update_datasource",
+    "validate_provisioning_file"
+  ],
+  "capabilities_total": 20,
+  "capabilities_resolved": 15,
+  "required_unresolved": [
+    "list_alert_rules",
+    "get_alert_rule",
+    "query_tempo_traces"
+  ],
+  "optional_unresolved": [
+    "get_trace",
+    "fetch_pyroscope_profile"
+  ],
+  "resolution": [
+    {
+      "capability": "list_datasources",
+      "required": true,
+      "candidates": [
+        "list_datasources"
+      ],
+      "resolved_tool": "list_datasources",
+      "purpose": "enumerate the metric, log, trace and profile datasources"
+    },
+    {
+      "capability": "get_datasource",
+      "required": false,
+      "candidates": [
+        "get_datasource",
+        "get_datasource_by_uid",
+        "get_datasource_by_name"
+      ],
+      "resolved_tool": "get_datasource",
+      "purpose": ""
+    },
+    {
+      "capability": "list_alert_rules",
+      "required": true,
+      "candidates": [
+        "list_alert_rules"
+      ],
+      "resolved_tool": null,
+      "purpose": "read the firing accessibility alert"
+    },
+    {
+      "capability": "get_alert_rule",
+      "required": true,
+      "candidates": [
+        "get_alert_rule_by_uid"
+      ],
+      "resolved_tool": null,
+      "purpose": "read the rule definition and labels behind the alert"
+    },
+    {
+      "capability": "query_prometheus",
+      "required": true,
+      "candidates": [
+        "query_prometheus"
+      ],
+      "resolved_tool": "query_prometheus",
+      "purpose": "query SLI series: drift, availability, sessions, budget burn"
+    },
+    {
+      "capability": "list_prometheus_metric_names",
+      "required": false,
+      "candidates": [
+        "list_prometheus_metric_names"
+      ],
+      "resolved_tool": "list_prometheus_metric_names",
+      "purpose": ""
+    },
+    {
+      "capability": "list_prometheus_label_values",
+      "required": false,
+      "candidates": [
+        "list_prometheus_label_values"
+      ],
+      "resolved_tool": "list_prometheus_label_values",
+      "purpose": ""
+    },
+    {
+      "capability": "query_loki_logs",
+      "required": true,
+      "candidates": [
+        "query_loki_logs"
+      ],
+      "resolved_tool": "query_loki_logs",
+      "purpose": "read encoder, clock, packager and player logs"
+    },
+    {
+      "capability": "query_loki_stats",
+      "required": false,
+      "candidates": [
+        "query_loki_stats"
+      ],
+      "resolved_tool": "query_loki_stats",
+      "purpose": ""
+    },
+    {
+      "capability": "query_tempo_traces",
+      "required": true,
+      "candidates": [
+        "query_tempo_traces",
+        "find_traces",
+        "search_traces"
+      ],
+      "resolved_tool": null,
+      "purpose": "follow the media path trace through the affected pool"
+    },
+    {
+      "capability": "get_trace",
+      "required": false,
+      "candidates": [
+        "get_trace_by_id",
+        "get_trace"
+      ],
+      "resolved_tool": null,
+      "purpose": ""
+    },
+    {
+      "capability": "fetch_pyroscope_profile",
+      "required": false,
+      "candidates": [
+        "fetch_pyroscope_profile"
+      ],
+      "resolved_tool": null,
+      "purpose": "profile the probe fleet during the incident"
+    },
+    {
+      "capability": "search_dashboards",
+      "required": true,
+      "candidates": [
+        "search_dashboards"
+      ],
+      "resolved_tool": "search_dashboards",
+      "purpose": "find the dashboard a human should open"
+    },
+    {
+      "capability": "get_dashboard",
+      "required": false,
+      "candidates": [
+        "get_dashboard_by_uid"
+      ],
+      "resolved_tool": "get_dashboard_by_uid",
+      "purpose": ""
+    },
+    {
+      "capability": "generate_deeplink",
+      "required": false,
+      "candidates": [
+        "generate_deeplink"
+      ],
+      "resolved_tool": "generate_deeplink",
+      "purpose": "produce a human-reviewable Grafana link"
+    },
+    {
+      "capability": "find_annotations",
+      "required": false,
+      "candidates": [
+        "find_annotations",
+        "get_annotations"
+      ],
+      "resolved_tool": "get_annotations",
+      "purpose": "read deployment and configuration annotations"
+    },
+    {
+      "capability": "create_annotation",
+      "required": true,
+      "candidates": [
+        "create_annotation",
+        "add_annotation"
+      ],
+      "resolved_tool": "create_annotation",
+      "purpose": "write the approved action and the recovery onto the timeline"
+    },
+    {
+      "capability": "list_incidents",
+      "required": false,
+      "candidates": [
+        "list_incidents"
+      ],
+      "resolved_tool": "list_incidents",
+      "purpose": ""
+    },
+    {
+      "capability": "create_incident",
+      "required": false,
+      "candidates": [
+        "create_incident"
+      ],
+      "resolved_tool": "create_incident",
+      "purpose": ""
+    },
+    {
+      "capability": "add_activity_to_incident",
+      "required": false,
+      "candidates": [
+        "add_activity_to_incident"
+      ],
+      "resolved_tool": "add_activity_to_incident",
+      "purpose": "append the approved action to the Grafana incident timeline"
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+apiVersion: 1
+
+datasources:
+  - name: AccessPulse Metrics
+    uid: ap-prom
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    jsonData:
+      httpMethod: POST
+      exemplarTraceIdDestinations:
+        - name: trace_id
+          datasourceUid: ap-tempo
+
+  - name: AccessPulse Logs
+    uid: ap-loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    jsonData:
+      derivedFields:
+        - datasourceUid: ap-tempo
+          matcherRegex: 'trace_id=(\w+)'
+          name: TraceID
+          url: '$${__value.raw}'
+
+  - name: AccessPulse Traces
+    uid: ap-tempo
+    type: tempo
+    access: proxy
+    url: http://tempo:3200
+    jsonData:
+      tracesToLogsV2:
+        datasourceUid: ap-loki
+        spanStartTimeShift: '-2m'
+        spanEndTimeShift: '2m'
+        filterByTraceID: false
+        tags: [{ key: 'component', value: 'service' }]
+      tracesToProfiles:
+        datasourceUid: ap-pyro
+        profileTypeId: 'process_cpu:cpu:nanoseconds'
+      serviceMap:
+        datasourceUid: ap-prom
+      nodeGraph:
+        enabled: true
+
+  - name: AccessPulse Profiles
+    uid: ap-pyro
+    type: grafana-pyroscope-datasource
+    access: proxy
+    url: http://pyroscope:4040

@@ -1,0 +1,70 @@
+# Delivery-chain components the eBPF programs observe.
+#
+# Each entry maps a cgroup to a component in the digital twin, so kernel-level
+# evidence arrives labelled with the same component name the media evidence
+# uses. That shared label is the whole point: without it the change-correlation
+# agent cannot join "this encoder was descheduled for 40 ms" to "captions on
+# this pool drifted".
+#
+# `config_paths` is what makes the staleness signal possible. A component that
+# has not reopened these files since a configuration change event was published
+# is running stale config - the negative signal behind `infra.stale_config`, the
+# most misdiagnosed fault in the benchmark.
+
+components:
+  - name: capenc-pool-a
+    kind: encoder
+    cgroup_path: /sys/fs/cgroup/media/caption-encoder-a
+    config_paths:
+      - /etc/accesspulse/caption-encoder.yaml
+      - /etc/accesspulse/timing.yaml
+
+  - name: capenc-pool-b
+    kind: encoder
+    cgroup_path: /sys/fs/cgroup/media/caption-encoder-b
+    config_paths:
+      - /etc/accesspulse/caption-encoder.yaml
+      - /etc/accesspulse/timing.yaml
+
+  - name: capenc-standby
+    kind: encoder
+    cgroup_path: /sys/fs/cgroup/media/caption-encoder-standby
+    config_paths:
+      - /etc/accesspulse/caption-encoder.yaml
+      - /etc/accesspulse/timing.yaml
+
+  - name: packager-main
+    kind: packager
+    cgroup_path: /sys/fs/cgroup/media/packager
+    config_paths:
+      - /etc/accesspulse/packager.yaml
+
+  - name: origin-main
+    kind: cdn
+    cgroup_path: /sys/fs/cgroup/media/origin
+    config_paths:
+      - /etc/accesspulse/origin.yaml
+
+  - name: timing-ptp
+    kind: timing
+    cgroup_path: /sys/fs/cgroup/media/ptp4l
+    config_paths:
+      - /etc/linuxptp/ptp4l.conf
+
+  - name: timing-ntp
+    kind: timing
+    cgroup_path: /sys/fs/cgroup/media/chronyd
+    config_paths:
+      - /etc/chrony/chrony.conf
+
+  - name: signsrc-lsf
+    kind: encoder
+    cgroup_path: /sys/fs/cgroup/media/sign-pipeline
+    config_paths:
+      - /etc/accesspulse/sign-pipeline.yaml
+
+  - name: desc-mixer
+    kind: encoder
+    cgroup_path: /sys/fs/cgroup/media/description-mixer
+    config_paths:
+      - /etc/accesspulse/description-mixer.yaml

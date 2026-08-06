@@ -1,0 +1,202 @@
+{
+  "scenarios": 1000,
+  "detection": {
+    "detection_rate": 1.0,
+    "mean_time_to_detect_s": 150.0,
+    "missed": 0,
+    "errors": 0
+  },
+  "diagnosis": {
+    "top1_accuracy": 0.652,
+    "top3_accuracy": 0.897,
+    "mean_top_posterior": 0.7314,
+    "top1_accuracy_hard_subset": 0.2769,
+    "hard_subset_size": 242
+  },
+  "scope": {
+    "mean_precision": 1.0,
+    "mean_recall": 0.9934
+  },
+  "agent": {
+    "mean_mcp_calls": 16.91,
+    "max_mcp_calls": 18,
+    "corrective_action_rate": 0.895,
+    "unsafe_action_rate": 0.0,
+    "actions_proposed": 1000
+  },
+  "verification": {
+    "recovered_rate": 0.919,
+    "rollback_rate": 0.081,
+    "false_closure_rate": 0.001,
+    "mean_assertions_passing": 6.502,
+    "mean_assertions_total": 6.692,
+    "mean_time_to_recovery_s": 2.4285
+  },
+  "impact": {
+    "mean_affected_sessions": 27561.374,
+    "mean_protected_sessions": 32563.29,
+    "total_sessions_protected": 32563290
+  },
+  "performance": {
+    "mean_wall_seconds_per_scenario": 15.6934,
+    "total_wall_seconds": 15693.4
+  },
+  "by_feature": {
+    "sign_language": {
+      "n": 181,
+      "top1": 158,
+      "recovered": 181,
+      "top1_accuracy": 0.8729,
+      "recovered_rate": 1.0
+    },
+    "captions": {
+      "n": 448,
+      "top1": 206,
+      "recovered": 388,
+      "top1_accuracy": 0.4598,
+      "recovered_rate": 0.8661
+    },
+    "audio_description": {
+      "n": 146,
+      "top1": 125,
+      "recovered": 125,
+      "top1_accuracy": 0.8562,
+      "recovered_rate": 0.8562
+    },
+    "accessible_player": {
+      "n": 173,
+      "top1": 124,
+      "recovered": 173,
+      "top1_accuracy": 0.7168,
+      "recovered_rate": 1.0
+    },
+    "accessible_purchase": {
+      "n": 20,
+      "top1": 20,
+      "recovered": 20,
+      "top1_accuracy": 1.0,
+      "recovered_rate": 1.0
+    },
+    "accessible_auth": {
+      "n": 19,
+      "top1": 19,
+      "recovered": 19,
+      "top1_accuracy": 1.0,
+      "recovered_rate": 1.0
+    },
+    "alternate_audio": {
+      "n": 13,
+      "top1": 0,
+      "recovered": 13,
+      "top1_accuracy": 0.0,
+      "recovered_rate": 1.0
+    }
+  },
+  "most_missed_faults": [
+    {
+      "fault_id": "infra.stale_config",
+      "misdiagnoses": 40
+    },
+    {
+      "fault_id": "infra.packet_loss",
+      "misdiagnoses": 32
+    },
+    {
+      "fault_id": "infra.provider_degradation",
+      "misdiagnoses": 29
+    },
+    {
+      "fault_id": "cap.word_drop",
+      "misdiagnoses": 28
+    },
+    {
+      "fault_id": "infra.encoder_cpu",
+      "misdiagnoses": 27
+    },
+    {
+      "fault_id": "player.caption_control",
+      "misdiagnoses": 26
+    },
+    {
+      "fault_id": "infra.clock_source_change",
+      "misdiagnoses": 24
+    },
+    {
+      "fault_id": "player.missing_name",
+      "misdiagnoses": 23
+    }
+  ],
+  "seed": 20260803,
+  "fault_types": 45,
+  "slice_matrix": {
+    "languages": [
+      "en",
+      "fr",
+      "de",
+      "es"
+    ],
+    "territories": [
+      "FR",
+      "DE",
+      "GB",
+      "US",
+      "CA"
+    ],
+    "player_versions": [
+      "ctv-9.3.1",
+      "ctv-9.4.0",
+      "web-4.12.0"
+    ]
+  },
+  "wall_seconds": 2654.3,
+  "ablations": {
+    "full": {
+      "detection_rate": 1.0,
+      "top1_accuracy": 0.645,
+      "top3_accuracy": 0.895,
+      "recovered_rate": 0.945,
+      "false_closure_rate": 0.005,
+      "scope_precision": 1.0,
+      "scope_recall": 0.9942,
+      "mean_mcp_calls": 16.97,
+      "unsafe_action_rate": 0.0,
+      "scenarios": 200
+    },
+    "no_change_correlation": {
+      "detection_rate": 1.0,
+      "top1_accuracy": 0.515,
+      "top3_accuracy": 0.84,
+      "recovered_rate": 0.79,
+      "false_closure_rate": 0.005,
+      "scope_precision": 1.0,
+      "scope_recall": 0.9942,
+      "mean_mcp_calls": 16.97,
+      "unsafe_action_rate": 0.0,
+      "scenarios": 200
+    },
+    "no_probe_confidence": {
+      "detection_rate": 1.0,
+      "top1_accuracy": 0.65,
+      "top3_accuracy": 0.895,
+      "recovered_rate": 0.945,
+      "false_closure_rate": 0.005,
+      "scope_precision": 1.0,
+      "scope_recall": 0.9942,
+      "mean_mcp_calls": 16.93,
+      "unsafe_action_rate": 0.0,
+      "scenarios": 200
+    },
+    "no_scope_agent": {
+      "detection_rate": 1.0,
+      "top1_accuracy": 0.64,
+      "top3_accuracy": 0.895,
+      "recovered_rate": 0.94,
+      "false_closure_rate": 0.0,
+      "scope_precision": 0.4943,
+      "scope_recall": 1.0,
+      "mean_mcp_calls": 16.97,
+      "unsafe_action_rate": 0.0,
+      "scenarios": 200
+    }
+  }
+}

@@ -1,0 +1,425 @@
+{
+  "checks": 63,
+  "failed": 0,
+  "contrast_ratios": {
+    "light": {
+      "body text on page": 16.6,
+      "body text on surface": 17.79,
+      "secondary text on surface": 7.77,
+      "secondary text on inset": 6.86,
+      "accent text on surface": 6.65,
+      "accent button label": 6.65,
+      "healthy status text": 6.5,
+      "at-risk status text": 6.39,
+      "breaching status text": 8.15,
+      "evidence stage rule": 6.65,
+      "hypothesis stage rule": 7.38,
+      "policy stage rule": 6.39,
+      "verified stage rule": 6.5,
+      "control border on surface": 4.53,
+      "control border on inset": 4.0,
+      "focus ring on page": 5.96,
+      "focus ring on surface": 6.39
+    },
+    "dark": {
+      "body text on page": 17.29,
+      "body text on surface": 15.82,
+      "secondary text on surface": 9.4,
+      "secondary text on inset": 8.48,
+      "accent text on surface": 6.95,
+      "accent button label": 7.66,
+      "healthy status text": 9.45,
+      "at-risk status text": 10.07,
+      "breaching status text": 8.47,
+      "evidence stage rule": 6.95,
+      "hypothesis stage rule": 8.2,
+      "policy stage rule": 10.07,
+      "verified stage rule": 9.45,
+      "control border on surface": 5.83,
+      "control border on inset": 5.26,
+      "focus ring on page": 11.0,
+      "focus ring on surface": 10.06
+    }
+  },
+  "results": [
+    {
+      "check": "3.1.1 language",
+      "detail": "<html> declares a language",
+      "ok": true,
+      "measured": "en"
+    },
+    {
+      "check": "2.4.1 bypass blocks",
+      "detail": "skip link resolves to an existing target",
+      "ok": true,
+      "measured": "#main"
+    },
+    {
+      "check": "2.4.1 bypass blocks",
+      "detail": "skip target is programmatically focusable",
+      "ok": true,
+      "measured": "-1"
+    },
+    {
+      "check": "4.1.2 tab pattern",
+      "detail": "every tab controls an existing panel",
+      "ok": true,
+      "measured": "7 tabs"
+    },
+    {
+      "check": "4.1.2 tab pattern",
+      "detail": "every panel is labelled by an existing tab",
+      "ok": true,
+      "measured": "7 panels"
+    },
+    {
+      "check": "4.1.2 tab pattern",
+      "detail": "exactly one tab is selected on load",
+      "ok": true,
+      "measured": "1 selected"
+    },
+    {
+      "check": "4.1.2 tab pattern",
+      "detail": "tabs live in a tablist",
+      "ok": true,
+      "measured": ""
+    },
+    {
+      "check": "1.3.1 headings",
+      "detail": "panel panel-overview contains a heading",
+      "ok": true,
+      "measured": ""
+    },
+    {
+      "check": "1.3.1 headings",
+      "detail": "panel panel-readiness contains a heading",
+      "ok": true,
+      "measured": ""
+    },
+    {
+      "check": "1.3.1 headings",
+      "detail": "panel panel-cockpit contains a heading",
+      "ok": true,
+      "measured": ""
+    },
+    {
+      "check": "1.3.1 headings",
+      "detail": "panel panel-incident contains a heading",
+      "ok": true,
+      "measured": ""
+    },
+    {
+      "check": "1.3.1 headings",
+      "detail": "panel panel-replay contains a heading",
+      "ok": true,
+      "measured": ""
+    },
+    {
+      "check": "1.3.1 headings",
+      "detail": "panel panel-observability contains a heading",
+      "ok": true,
+      "measured": ""
+    },
+    {
+      "check": "1.3.1 headings",
+      "detail": "panel panel-benchmark contains a heading",
+      "ok": true,
+      "measured": ""
+    },
+    {
+      "check": "4.1.2 accessible name",
+      "detail": "every interactive element has a name",
+      "ok": true,
+      "measured": "all named"
+    },
+    {
+      "check": "3.3.2 labels or instructions",
+      "detail": "every form control has a <label for>",
+      "ok": true,
+      "measured": "1 labelled controls"
+    },
+    {
+      "check": "1.1.1 non-text content",
+      "detail": "decorative marks are aria-hidden",
+      "ok": true,
+      "measured": "1 decorative marks"
+    },
+    {
+      "check": "4.1.3 status messages",
+      "detail": "live regions announce asynchronous updates",
+      "ok": true,
+      "measured": "5 live regions"
+    },
+    {
+      "check": "1.4.3 contrast",
+      "detail": "light: body text on page >= 4.5:1",
+      "ok": true,
+      "measured": "16.60:1"
+    },
+    {
+      "check": "1.4.3 contrast",
+      "detail": "light: body text on surface >= 4.5:1",
+      "ok": true,
+      "measured": "17.79:1"
+    },
+    {
+      "check": "1.4.3 contrast",
+      "detail": "light: secondary text on surface >= 4.5:1",
+      "ok": true,
+      "measured": "7.77:1"
+    },
+    {
+      "check": "1.4.3 contrast",
+      "detail": "light: secondary text on inset >= 4.5:1",
+      "ok": true,
+      "measured": "6.86:1"
+    },
+    {
+      "check": "1.4.3 contrast",
+      "detail": "light: accent text on surface >= 4.5:1",
+      "ok": true,
+      "measured": "6.65:1"
+    },
+    {
+      "check": "1.4.3 contrast",
+      "detail": "light: accent button label >= 4.5:1",
+      "ok": true,
+      "measured": "6.65:1"
+    },
+    {
+      "check": "1.4.3 contrast",
+      "detail": "light: healthy status text >= 4.5:1",
+      "ok": true,
+      "measured": "6.50:1"
+    },
+    {
+      "check": "1.4.3 contrast",
+      "detail": "light: at-risk status text >= 4.5:1",
+      "ok": true,
+      "measured": "6.39:1"
+    },
+    {
+      "check": "1.4.3 contrast",
+      "detail": "light: breaching status text >= 4.5:1",
+      "ok": true,
+      "measured": "8.15:1"
+    },
+    {
+      "check": "1.4.11 non-text contrast",
+      "detail": "light: evidence stage rule >= 3.0:1",
+      "ok": true,
+      "measured": "6.65:1"
+    },
+    {
+      "check": "1.4.11 non-text contrast",
+      "detail": "light: hypothesis stage rule >= 3.0:1",
+      "ok": true,
+      "measured": "7.38:1"
+    },
+    {
+      "check": "1.4.11 non-text contrast",
+      "detail": "light: policy stage rule >= 3.0:1",
+      "ok": true,
+      "measured": "6.39:1"
+    },
+    {
+      "check": "1.4.11 non-text contrast",
+      "detail": "light: verified stage rule >= 3.0:1",
+      "ok": true,
+      "measured": "6.50:1"
+    },
+    {
+      "check": "1.4.11 non-text contrast",
+      "detail": "light: control border on surface >= 3.0:1",
+      "ok": true,
+      "measured": "4.53:1"
+    },
+    {
+      "check": "1.4.11 non-text contrast",
+      "detail": "light: control border on inset >= 3.0:1",
+      "ok": true,
+      "measured": "4.00:1"
+    },
+    {
+      "check": "1.4.11 non-text contrast",
+      "detail": "light: focus ring on page >= 3.0:1",
+      "ok": true,
+      "measured": "5.96:1"
+    },
+    {
+      "check": "1.4.11 non-text contrast",
+      "detail": "light: focus ring on surface >= 3.0:1",
+      "ok": true,
+      "measured": "6.39:1"
+    },
+    {
+      "check": "1.4.3 contrast",
+      "detail": "dark: body text on page >= 4.5:1",
+      "ok": true,
+      "measured": "17.29:1"
+    },
+    {
+      "check": "1.4.3 contrast",
+      "detail": "dark: body text on surface >= 4.5:1",
+      "ok": true,
+      "measured": "15.82:1"
+    },
+    {
+      "check": "1.4.3 contrast",
+      "detail": "dark: secondary text on surface >= 4.5:1",
+      "ok": true,
+      "measured": "9.40:1"
+    },
+    {
+      "check": "1.4.3 contrast",
+      "detail": "dark: secondary text on inset >= 4.5:1",
+      "ok": true,
+      "measured": "8.48:1"
+    },
+    {
+      "check": "1.4.3 contrast",
+      "detail": "dark: accent text on surface >= 4.5:1",
+      "ok": true,
+      "measured": "6.95:1"
+    },
+    {
+      "check": "1.4.3 contrast",
+      "detail": "dark: accent button label >= 4.5:1",
+      "ok": true,
+      "measured": "7.66:1"
+    },
+    {
+      "check": "1.4.3 contrast",
+      "detail": "dark: healthy status text >= 4.5:1",
+      "ok": true,
+      "measured": "9.45:1"
+    },
+    {
+      "check": "1.4.3 contrast",
+      "detail": "dark: at-risk status text >= 4.5:1",
+      "ok": true,
+      "measured": "10.07:1"
+    },
+    {
+      "check": "1.4.3 contrast",
+      "detail": "dark: breaching status text >= 4.5:1",
+      "ok": true,
+      "measured": "8.47:1"
+    },
+    {
+      "check": "1.4.11 non-text contrast",
+      "detail": "dark: evidence stage rule >= 3.0:1",
+      "ok": true,
+      "measured": "6.95:1"
+    },
+    {
+      "check": "1.4.11 non-text contrast",
+      "detail": "dark: hypothesis stage rule >= 3.0:1",
+      "ok": true,
+      "measured": "8.20:1"
+    },
+    {
+      "check": "1.4.11 non-text contrast",
+      "detail": "dark: policy stage rule >= 3.0:1",
+      "ok": true,
+      "measured": "10.07:1"
+    },
+    {
+      "check": "1.4.11 non-text contrast",
+      "detail": "dark: verified stage rule >= 3.0:1",
+      "ok": true,
+      "measured": "9.45:1"
+    },
+    {
+      "check": "1.4.11 non-text contrast",
+      "detail": "dark: control border on surface >= 3.0:1",
+      "ok": true,
+      "measured": "5.83:1"
+    },
+    {
+      "check": "1.4.11 non-text contrast",
+      "detail": "dark: control border on inset >= 3.0:1",
+      "ok": true,
+      "measured": "5.26:1"
+    },
+    {
+      "check": "1.4.11 non-text contrast",
+      "detail": "dark: focus ring on page >= 3.0:1",
+      "ok": true,
+      "measured": "11.00:1"
+    },
+    {
+      "check": "1.4.11 non-text contrast",
+      "detail": "dark: focus ring on surface >= 3.0:1",
+      "ok": true,
+      "measured": "10.06:1"
+    },
+    {
+      "check": "2.4.7 focus visible",
+      "detail": "focus-visible outline is at least 2px",
+      "ok": true,
+      "measured": ""
+    },
+    {
+      "check": "2.3.3 animation from interactions",
+      "detail": "reduced-motion preference is honoured",
+      "ok": true,
+      "measured": "3 animated declarations"
+    },
+    {
+      "check": "1.4.4 resize text",
+      "detail": "root font size is relative, not fixed px",
+      "ok": true,
+      "measured": ""
+    },
+    {
+      "check": "1.4.10 reflow",
+      "detail": "a narrow-viewport breakpoint exists",
+      "ok": true,
+      "measured": ""
+    },
+    {
+      "check": "1.4.11 non-text contrast",
+      "detail": "forced-colors mode is supported",
+      "ok": true,
+      "measured": ""
+    },
+    {
+      "check": "1.4.1 use of colour",
+      "detail": "statusSpan renders its text argument",
+      "ok": true,
+      "measured": "helper found"
+    },
+    {
+      "check": "1.4.1 use of colour",
+      "detail": "every statusSpan call supplies a label",
+      "ok": true,
+      "measured": "24 call sites"
+    },
+    {
+      "check": "1.4.1 use of colour",
+      "detail": "every coloured status class also sets a glyph",
+      "ok": true,
+      "measured": "4 classes"
+    },
+    {
+      "check": "3.1.2 language of parts",
+      "detail": "replay text declares the language of the slice it came from",
+      "ok": true,
+      "measured": "lang attribute set from slice"
+    },
+    {
+      "check": "2.1.1 keyboard",
+      "detail": "tab set supports arrow, Home and End keys",
+      "ok": true,
+      "measured": "APG tab pattern"
+    },
+    {
+      "check": "2.4.3 focus order",
+      "detail": "no positive tabindex is created at runtime",
+      "ok": true,
+      "measured": ""
+    }
+  ],
+  "note": "Static audit. Does not replace the manual screen-reader and keyboard pass recorded in docs/ACCESSIBILITY_CONFORMANCE.md."
+}

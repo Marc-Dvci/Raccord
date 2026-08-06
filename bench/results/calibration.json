@@ -1,0 +1,125 @@
+{
+  "probe_versions": {
+    "caption": "caption-probe-1.4.0"
+  },
+  "window_seconds": 30.0,
+  "slices": [
+    "en/FR/ctv/ctv-9.4.0",
+    "fr/FR/ctv/ctv-9.3.1",
+    "de/DE/web/web-4.12.0",
+    "es/GB/ctv/ctv-9.4.0"
+  ],
+  "seeds": [
+    11,
+    23,
+    37,
+    41,
+    53
+  ],
+  "drift": {
+    "samples": 160,
+    "measured": 160,
+    "abstained": 0,
+    "mean_absolute_error_s": 0.03,
+    "median_absolute_error_s": 0.006,
+    "bias_s": 0.03,
+    "p95_absolute_error_s": 0.148,
+    "interval_coverage": 1.0,
+    "mean_confidence": 0.94,
+    "by_injected_offset": {
+      "0.5": {
+        "n": 20,
+        "mean_absolute_error_s": 0.018,
+        "bias_s": 0.018
+      },
+      "1.0": {
+        "n": 20,
+        "mean_absolute_error_s": 0.018,
+        "bias_s": 0.018
+      },
+      "2.0": {
+        "n": 20,
+        "mean_absolute_error_s": 0.018,
+        "bias_s": 0.018
+      },
+      "3.0": {
+        "n": 20,
+        "mean_absolute_error_s": 0.018,
+        "bias_s": 0.018
+      },
+      "4.0": {
+        "n": 20,
+        "mean_absolute_error_s": 0.018,
+        "bias_s": 0.018
+      },
+      "6.0": {
+        "n": 20,
+        "mean_absolute_error_s": 0.018,
+        "bias_s": 0.018
+      },
+      "8.0": {
+        "n": 20,
+        "mean_absolute_error_s": 0.068,
+        "bias_s": 0.068
+      },
+      "12.0": {
+        "n": 20,
+        "mean_absolute_error_s": 0.068,
+        "bias_s": 0.068
+      }
+    }
+  },
+  "omission": {
+    "by_injected_drop_rate": [
+      {
+        "injected": 0.05,
+        "n": 20,
+        "mean_absolute_error": 0.017,
+        "bias": -0.0028
+      },
+      {
+        "injected": 0.1,
+        "n": 20,
+        "mean_absolute_error": 0.0283,
+        "bias": -0.0002
+      },
+      {
+        "injected": 0.2,
+        "n": 20,
+        "mean_absolute_error": 0.0413,
+        "bias": 0.0024
+      },
+      {
+        "injected": 0.3,
+        "n": 20,
+        "mean_absolute_error": 0.0371,
+        "bias": 0.0032
+      },
+      {
+        "injected": 0.45,
+        "n": 20,
+        "mean_absolute_error": 0.0545,
+        "bias": 0.009
+      }
+    ],
+    "mean_absolute_bias": 0.0035
+  },
+  "language_identification": {
+    "samples": 48,
+    "accuracy": 1.0,
+    "mean_confidence": 1.0,
+    "confusions": {
+      "en": {},
+      "fr": {},
+      "de": {},
+      "es": {}
+    },
+    "note": "Single dialogue lines. The probe identifies over a whole window of cues, which is a much longer string than this."
+  },
+  "abstention": {
+    "windows_with_no_caption_content": 20,
+    "abstention_rate": 1.0,
+    "confident_zero_rate": 0.0,
+    "note": "confident_zero_rate is the number that matters: a probe reporting '0.0 seconds of drift, high confidence' for a window with no captions at all would hide a total loss of service."
+  }
+}

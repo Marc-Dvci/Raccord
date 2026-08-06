@@ -1,0 +1,80 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "accesspulse"
+version = "0.1.0"
+description = "AccessPulse - Accessible Experience Reliability Platform (Grafana track, Agentic Cinema)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [{ name = "AccessPulse Team" }]
+
+dependencies = [
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.30",
+  "pydantic>=2.7",
+  "pydantic-settings>=2.3",
+  "httpx>=0.27",
+  "prometheus-client>=0.20",
+  "numpy>=1.26",
+  "python-multipart>=0.0.9",
+  "jinja2>=3.1",
+  "PyYAML>=6.0",
+  "rich>=13.7",
+  "typer>=0.12",
+]
+
+[project.optional-dependencies]
+# Cloud / partner runtime. Not required for the fully local demo.
+cloud = [
+  "google-adk>=1.0.0",
+  "google-genai>=1.0.0",
+  "google-cloud-aiplatform[agent_engines,adk]>=1.101.0",
+  "mcp>=1.2.0",
+]
+otel = [
+  "opentelemetry-sdk>=1.25",
+  "opentelemetry-exporter-otlp-proto-http>=1.25",
+  "opentelemetry-instrumentation-fastapi>=0.46b0",
+]
+dev = [
+  "pytest>=8.2",
+  "pytest-asyncio>=0.23",
+  "ruff>=0.5",
+]
+
+[project.scripts]
+accesspulse = "accesspulse.cli:app"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+accesspulse = ["web/**/*", "data/**/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+# Selected explicitly rather than left to ruff's default set, which changes
+# between releases. A lint configuration that drifts under CI is one nobody
+# trusts, and CI here is meant to be believed.
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+
+[tool.ruff.lint.per-file-ignores]
+# The programme itself: dialogue lines and their translations. Wrapping a line
+# of a screenplay to satisfy a line-length rule would make the script harder to
+# read and the translations harder to compare, which is the opposite of the
+# point.
+"src/accesspulse/media.py" = ["E501"]
+# The audience communications are multi-line f-string templates. A `noqa` inside
+# one would be rendered into the message, and rewrapping a sentence to satisfy a
+# linter would change what an operator reads during an incident.
+"src/accesspulse/agents/core.py" = ["E501"]

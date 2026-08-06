@@ -1,0 +1,18 @@
+# Normalise to LF in the repository. This project is developed on Windows and
+# run by judges and CI on Linux; a shell script or a Dockerfile that arrives
+# with CRLF line endings fails with an unhelpful error, so pin the text types
+# rather than relying on each contributor's core.autocrlf.
+* text=auto eol=lf
+
+*.sh      text eol=lf
+Dockerfile text eol=lf
+*.py      text eol=lf
+*.yml     text eol=lf
+*.yaml    text eol=lf
+*.json    text eol=lf
+*.tf      text eol=lf
+*.c       text eol=lf
+
+*.png     binary
+*.jpg     binary
+*.ico     binary

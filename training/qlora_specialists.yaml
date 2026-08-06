@@ -1,0 +1,147 @@
+# QLoRA specialist adapters.
+#
+# Three narrow, private tasks. Each is something a frontier model does well and
+# an operator may not be permitted to send off-premises: incident prose that
+# names internal components, and log lines from a delivery chain.
+#
+# The specialists never decide anything (ADR 0001). They write and they label.
+# Every one of them can be removed and the loop still closes.
+#
+#   python training/train_qlora.py --config training/qlora_specialists.yaml \
+#          --adapter status_writer
+#
+# Training data is built from AccessPulse's own incident records by
+# `training/build_dataset.py`. It contains no audience data of any kind - see
+# docs/PRIVACY.md - and the builder asserts that before writing a shard.
+
+base:
+  # A small open-weights base is deliberate: these tasks are narrow, the adapter
+  # has to run on the operator's own hardware next to the delivery chain, and
+  # the latency budget during a live event is small.
+  model_id: mistralai/Mistral-7B-Instruct-v0.3
+  revision: main
+  trust_remote_code: false
+  max_seq_length: 2048
+
+quantization:
+  load_in_4bit: true
+  bnb_4bit_quant_type: nf4
+  bnb_4bit_use_double_quant: true
+  bnb_4bit_compute_dtype: bfloat16
+
+lora:
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  bias: none
+  task_type: CAUSAL_LM
+  target_modules:
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+    - gate_proj
+    - up_proj
+    - down_proj
+
+train:
+  epochs: 3
+  per_device_batch_size: 4
+  gradient_accumulation_steps: 8      # effective batch 32
+  learning_rate: 2.0e-4
+  lr_scheduler_type: cosine
+  warmup_ratio: 0.03
+  weight_decay: 0.01
+  optim: paged_adamw_8bit
+  gradient_checkpointing: true
+  bf16: true
+  logging_steps: 10
+  eval_strategy: epoch
+  save_strategy: epoch
+  seed: 20260803
+
+# Every run writes metrics to the same Prometheus endpoint the rest of the
+# platform uses, so training is observable in Grafana next to the probe fleet.
+observability:
+  prometheus_pushgateway: ${AP_PUSHGATEWAY:-}
+  metric_prefix: accesspulse_training
+  log_to: var/training
+
+adapters:
+
+  status_writer:
+    description: >
+      Writes the public accessibility status update. Plain language, no internal
+      component names, no jargon, no speculation about cause, and an explicit
+      instruction the viewer can act on. The register is the hard part and the
+      reason this is a specialist rather than a prompt.
+    dataset: var/training/status_writer.jsonl
+    instruction: |
+      You are writing a public service status update about an accessibility
+      feature on a live media service. Write for viewers, not for engineers.
+      Never name an internal component, encoder, pool, region or version.
+      Never speculate about cause. State what was affected, that it is fixed,
+      what was re-checked, what the viewer should do, and when the update was
+      issued. Six sentences at most.
+    eval:
+      # Assertions, not a loss curve. A status update that scores well on
+      # perplexity and leaks "capenc-pool-a" is a failed adapter.
+      - name: no_internal_identifiers
+        kind: forbidden_patterns
+        patterns: ["capenc", "pool-", "ctv-9", "web-4", "pv-", "signsrc", "eu-west", "origin-"]
+      - name: reading_level
+        kind: max_flesch_kincaid_grade
+        value: 8
+      - name: length
+        kind: max_sentences
+        value: 6
+      - name: has_viewer_action
+        kind: required_any
+        patterns: ["close the player", "open it again", "select", "reload", "try again"]
+
+  operator_brief:
+    description: >
+      Writes the operator-facing incident brief: what broke, which slices, what
+      the evidence shows, what was done, what is still uncertain. Internal names
+      are required here - which is exactly why it must run privately.
+    dataset: var/training/operator_brief.jsonl
+    instruction: |
+      Write an incident brief for a broadcast operations team. Be specific:
+      name the affected feature, languages, territories, platforms and player
+      versions, the component implicated, the action taken and the verification
+      result. State explicitly what remains uncertain. Do not speculate beyond
+      the evidence provided.
+    eval:
+      - name: cites_scope
+        kind: required_all
+        patterns: ["feature:", "scope:"]
+      - name: states_confidence
+        kind: required_any
+        patterns: ["posterior", "confidence", "uncertain", "not established",
+                   "cannot be confirmed", "assertions"]
+      - name: no_invented_metrics
+        kind: numbers_must_appear_in_source
+        value: true
+
+  log_labeller:
+    description: >
+      Labels delivery-chain log lines with a structured failure hint. Runs on
+      the operator's own infrastructure because log lines carry internal
+      topology. Its output is a *hint* consumed as one weak signal by the
+      change-correlation agent - never as a diagnosis.
+    dataset: var/training/log_labeller.jsonl
+    instruction: |
+      Classify this delivery-chain log line. Return JSON with keys:
+      component_kind (encoder|packager|cdn|timing|player|auth|unknown),
+      severity (info|warn|error), failure_hint (short noun phrase or null),
+      confidence (0..1). Return null for failure_hint when the line does not
+      indicate a failure. Do not invent a component that is not named.
+    eval:
+      - name: parses_as_json
+        kind: json_parseable
+      - name: schema
+        kind: json_keys
+        value: [component_kind, severity, failure_hint, confidence]
+      - name: abstains_on_benign_lines
+        kind: min_null_rate_on_info_lines
+        value: 0.9

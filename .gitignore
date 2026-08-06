@@ -1,0 +1,32 @@
+__pycache__/
+*.py[cod]
+.venv/
+.venv-mcp/
+venv/
+.env
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+node_modules/
+.DS_Store
+
+# Runtime state: SQLite incident and promise stores, the locally-generated
+# approval signing key, generated training shards. All regenerated on demand,
+# and the signing key in particular must never be committed
+# (docs/THREAT_MODEL.md section 6).
+var/
+
+# Terraform state carries resource metadata and sometimes secrets.
+infra/terraform/.terraform/
+infra/terraform/*.tfstate*
+infra/terraform/*.tfvars
+
+# Compiled eBPF objects.
+ebpf/*.bpf.o
+
+# Benchmark results ARE committed: they are the evidence for the numbers in
+# docs/BENCHMARK.md, and a repository that documents results it does not ship is
+# asking to be taken on trust. Only scratch output from ad-hoc runs is ignored.
+bench/results/tmp/

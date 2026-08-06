@@ -1,0 +1,120 @@
+﻿AccessPulse benchmark: 1000 scenarios over 45 fault types, seed 20260803, 6 worker(s)
+  [full] chunk 1/24 (42 scenarios)
+  [full] chunk 2/24 (84 scenarios)
+  [full] chunk 3/24 (126 scenarios)
+  [full] chunk 4/24 (168 scenarios)
+  [full] chunk 5/24 (210 scenarios)
+  [full] chunk 6/24 (252 scenarios)
+  [full] chunk 7/24 (294 scenarios)
+  [full] chunk 8/24 (336 scenarios)
+  [full] chunk 9/24 (378 scenarios)
+  [full] chunk 10/24 (420 scenarios)
+  [full] chunk 11/24 (462 scenarios)
+  [full] chunk 12/24 (504 scenarios)
+  [full] chunk 13/24 (546 scenarios)
+  [full] chunk 14/24 (588 scenarios)
+  [full] chunk 15/24 (630 scenarios)
+  [full] chunk 16/24 (672 scenarios)
+  [full] chunk 17/24 (714 scenarios)
+  [full] chunk 18/24 (756 scenarios)
+  [full] chunk 19/24 (798 scenarios)
+  [full] chunk 20/24 (832 scenarios)
+  [full] chunk 21/24 (874 scenarios)
+  [full] chunk 22/24 (916 scenarios)
+  [full] chunk 23/24 (958 scenarios)
+  [full] chunk 24/24 (1000 scenarios)
+ablation: no_change_correlation
+  [no_change_correlation] chunk 1/23 (9 scenarios)
+  [no_change_correlation] chunk 2/23 (18 scenarios)
+  [no_change_correlation] chunk 3/23 (27 scenarios)
+  [no_change_correlation] chunk 4/23 (36 scenarios)
+  [no_change_correlation] chunk 5/23 (45 scenarios)
+  [no_change_correlation] chunk 6/23 (54 scenarios)
+  [no_change_correlation] chunk 7/23 (63 scenarios)
+  [no_change_correlation] chunk 8/23 (72 scenarios)
+  [no_change_correlation] chunk 9/23 (81 scenarios)
+  [no_change_correlation] chunk 10/23 (90 scenarios)
+  [no_change_correlation] chunk 11/23 (99 scenarios)
+  [no_change_correlation] chunk 12/23 (108 scenarios)
+  [no_change_correlation] chunk 13/23 (117 scenarios)
+  [no_change_correlation] chunk 14/23 (126 scenarios)
+  [no_change_correlation] chunk 15/23 (135 scenarios)
+  [no_change_correlation] chunk 16/23 (144 scenarios)
+  [no_change_correlation] chunk 17/23 (153 scenarios)
+  [no_change_correlation] chunk 18/23 (162 scenarios)
+  [no_change_correlation] chunk 19/23 (164 scenarios)
+  [no_change_correlation] chunk 20/23 (173 scenarios)
+  [no_change_correlation] chunk 21/23 (182 scenarios)
+  [no_change_correlation] chunk 22/23 (191 scenarios)
+  [no_change_correlation] chunk 23/23 (200 scenarios)
+ablation: no_probe_confidence
+  [no_probe_confidence] chunk 1/23 (9 scenarios)
+  [no_probe_confidence] chunk 2/23 (18 scenarios)
+  [no_probe_confidence] chunk 3/23 (27 scenarios)
+  [no_probe_confidence] chunk 4/23 (36 scenarios)
+  [no_probe_confidence] chunk 5/23 (45 scenarios)
+  [no_probe_confidence] chunk 6/23 (54 scenarios)
+  [no_probe_confidence] chunk 7/23 (63 scenarios)
+  [no_probe_confidence] chunk 8/23 (72 scenarios)
+  [no_probe_confidence] chunk 9/23 (81 scenarios)
+  [no_probe_confidence] chunk 10/23 (90 scenarios)
+  [no_probe_confidence] chunk 11/23 (99 scenarios)
+  [no_probe_confidence] chunk 12/23 (108 scenarios)
+  [no_probe_confidence] chunk 13/23 (117 scenarios)
+  [no_probe_confidence] chunk 14/23 (126 scenarios)
+  [no_probe_confidence] chunk 15/23 (135 scenarios)
+  [no_probe_confidence] chunk 16/23 (144 scenarios)
+  [no_probe_confidence] chunk 17/23 (153 scenarios)
+  [no_probe_confidence] chunk 18/23 (162 scenarios)
+  [no_probe_confidence] chunk 19/23 (164 scenarios)
+  [no_probe_confidence] chunk 20/23 (173 scenarios)
+  [no_probe_confidence] chunk 21/23 (182 scenarios)
+  [no_probe_confidence] chunk 22/23 (191 scenarios)
+  [no_probe_confidence] chunk 23/23 (200 scenarios)
+ablation: no_scope_agent
+  [no_scope_agent] chunk 1/23 (9 scenarios)
+  [no_scope_agent] chunk 2/23 (18 scenarios)
+  [no_scope_agent] chunk 3/23 (27 scenarios)
+  [no_scope_agent] chunk 4/23 (36 scenarios)
+  [no_scope_agent] chunk 5/23 (45 scenarios)
+  [no_scope_agent] chunk 6/23 (54 scenarios)
+  [no_scope_agent] chunk 7/23 (63 scenarios)
+  [no_scope_agent] chunk 8/23 (72 scenarios)
+  [no_scope_agent] chunk 9/23 (81 scenarios)
+  [no_scope_agent] chunk 10/23 (90 scenarios)
+  [no_scope_agent] chunk 11/23 (99 scenarios)
+  [no_scope_agent] chunk 12/23 (108 scenarios)
+  [no_scope_agent] chunk 13/23 (117 scenarios)
+  [no_scope_agent] chunk 14/23 (126 scenarios)
+  [no_scope_agent] chunk 15/23 (135 scenarios)
+  [no_scope_agent] chunk 16/23 (144 scenarios)
+  [no_scope_agent] chunk 17/23 (153 scenarios)
+  [no_scope_agent] chunk 18/23 (162 scenarios)
+  [no_scope_agent] chunk 19/23 (171 scenarios)
+  [no_scope_agent] chunk 20/23 (173 scenarios)
+  [no_scope_agent] chunk 21/23 (182 scenarios)
+  [no_scope_agent] chunk 22/23 (191 scenarios)
+  [no_scope_agent] chunk 23/23 (200 scenarios)
+
+==============================================================
+scenarios                 1000
+detection rate            1.000
+top-1 root cause          0.652
+top-3 root cause          0.897
+top-1 on hard subset      0.277 (n=242)
+scope precision / recall  1.000 / 0.993
+corrective action rate    0.895
+recovered and verified    0.919
+rollback rate             0.081
+false closure rate        0.001
+unsafe action rate        0.000
+mean Grafana MCP calls    16.9
+sessions protected        32,563,290
+==============================================================
+configuration               detect   top-1  recover    mcp
+full                         1.000   0.652    0.919   16.9
+no_change_correlation        1.000   0.515    0.790   17.0
+no_probe_confidence          1.000   0.645    0.945   16.9
+no_scope_agent               1.000   0.640    0.940   17.0
+
+wrote bench\results\summary.json and bench\results\scenarios.jsonl

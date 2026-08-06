@@ -1,0 +1,751 @@
+{
+  "uid": "ap-cockpit",
+  "title": "AccessPulse / Live event command centre",
+  "description": "What every audience slice is receiving right now, against what was promised.",
+  "tags": [
+    "accesspulse",
+    "live",
+    "event"
+  ],
+  "timezone": "utc",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "refresh": "10s",
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "language",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "ap-prom"
+        },
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "label": "Language",
+        "query": {
+          "query": "label_values(accesspulse_caption_drift_seconds, language)"
+        }
+      },
+      {
+        "name": "territory",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "ap-prom"
+        },
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "label": "Territory",
+        "query": {
+          "query": "label_values(accesspulse_caption_drift_seconds, territory)"
+        }
+      },
+      {
+        "name": "player_version",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "ap-prom"
+        },
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "label": "Player build",
+        "query": {
+          "query": "label_values(accesspulse_caption_drift_seconds, player_version)"
+        }
+      }
+    ]
+  },
+  "annotations": {
+    "list": [
+      {
+        "name": "AccessPulse actions",
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "iconColor": "purple",
+        "target": {
+          "type": "tags",
+          "matchAny": true,
+          "tags": [
+            "accesspulse",
+            "approved-action",
+            "recovery"
+          ]
+        }
+      },
+      {
+        "name": "Deployments and configuration",
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "iconColor": "orange",
+        "target": {
+          "type": "tags",
+          "matchAny": true,
+          "tags": [
+            "deployment",
+            "config",
+            "change"
+          ]
+        }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "text",
+      "title": "Live event command centre",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 3
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "Promised experiences for the current event, and what each audience slice is receiving right now. Orange annotations are deployments and configuration changes; purple annotations are AccessPulse approved actions and recoveries."
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Caption drift (worst slice)",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "ap-prom"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 3,
+        "w": 4,
+        "h": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max(accesspulse_caption_drift_seconds{language=~\"$language\",territory=~\"$territory\",player_version=~\"$player_version\"})",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "ap-prom"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 1.5
+              },
+              {
+                "color": "red",
+                "value": 3
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Caption availability (worst slice)",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "ap-prom"
+      },
+      "gridPos": {
+        "x": 4,
+        "y": 3,
+        "w": 4,
+        "h": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "min(accesspulse_caption_track_available_ratio{language=~\"$language\",territory=~\"$territory\",player_version=~\"$player_version\"})",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "ap-prom"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 0.999
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Described audio audible",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "ap-prom"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 3,
+        "w": 4,
+        "h": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "min(accesspulse_ad_audio_present_ratio)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "ap-prom"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 0.99
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Interpreter feed frame rate",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "ap-prom"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 3,
+        "w": 4,
+        "h": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "min(accesspulse_sign_fps)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "ap-prom"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 45
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Keyboard journeys completing",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "ap-prom"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 3,
+        "w": 4,
+        "h": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "min(accesspulse_player_keyboard_completion_ratio)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "ap-prom"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 7,
+      "type": "stat",
+      "title": "Screen-reader journeys completing",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "ap-prom"
+      },
+      "gridPos": {
+        "x": 20,
+        "y": 3,
+        "w": 4,
+        "h": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "min(accesspulse_player_screenreader_completion_ratio)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "ap-prom"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Caption drift by slice",
+      "description": "Signed offset between rendered captions and aligned spoken dialogue, measured by the caption probe.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "ap-prom"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "accesspulse_caption_drift_seconds{language=~\"$language\",territory=~\"$territory\",player_version=~\"$player_version\"}",
+          "legendFormat": "{{language}} / {{territory}} / {{player_version}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "ap-prom"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1.5
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 9,
+      "type": "table",
+      "title": "Territory x platform health",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "ap-prom"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 8,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "accesspulse_slo_breached",
+          "format": "table",
+          "instant": true,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "ap-prom"
+          }
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {}
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "Value",
+            "desc": true
+          }
+        ]
+      }
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Accessibility-enabled sessions in affected slices",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "ap-prom"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 17,
+        "w": 8,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "accesspulse_sessions_caption_enabled{language=~\"$language\",territory=~\"$territory\",player_version=~\"$player_version\"}",
+          "legendFormat": "{{language}} / {{territory}} / {{player_version}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "ap-prom"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "Encoder CPU / GPU utilisation",
+      "description": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "ap-prom"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 17,
+        "w": 8,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "accesspulse_encoder_cpu_utilisation or accesspulse_gpu_utilisation",
+          "legendFormat": "{{language}} / {{territory}} / {{player_version}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "ap-prom"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 12,
+      "type": "logs",
+      "title": "Delivery chain logs",
+      "datasource": {
+        "type": "loki",
+        "uid": "ap-loki"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 17,
+        "w": 8,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{service=~\"capenc-.*|packager-main|cdn-primary|clock-.*|signsrc-.*\"}",
+          "datasource": {
+            "type": "loki",
+            "uid": "ap-loki"
+          }
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "wrapLogMessage": true,
+        "sortOrder": "Descending"
+      }
+    }
+  ]
+}

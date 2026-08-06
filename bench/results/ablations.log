@@ -1,0 +1,101 @@
+ablation: no_change_correlation
+  [no_change_correlation] chunk 1/25 (8 scenarios)
+  [no_change_correlation] chunk 2/25 (16 scenarios)
+  [no_change_correlation] chunk 3/25 (24 scenarios)
+  [no_change_correlation] chunk 4/25 (32 scenarios)
+  [no_change_correlation] chunk 5/25 (40 scenarios)
+  [no_change_correlation] chunk 6/25 (48 scenarios)
+  [no_change_correlation] chunk 7/25 (56 scenarios)
+  [no_change_correlation] chunk 8/25 (64 scenarios)
+  [no_change_correlation] chunk 9/25 (72 scenarios)
+  [no_change_correlation] chunk 10/25 (80 scenarios)
+  [no_change_correlation] chunk 11/25 (88 scenarios)
+  [no_change_correlation] chunk 12/25 (96 scenarios)
+  [no_change_correlation] chunk 13/25 (104 scenarios)
+  [no_change_correlation] chunk 14/25 (112 scenarios)
+  [no_change_correlation] chunk 15/25 (120 scenarios)
+  [no_change_correlation] chunk 16/25 (128 scenarios)
+  [no_change_correlation] chunk 17/25 (136 scenarios)
+  [no_change_correlation] chunk 18/25 (144 scenarios)
+  [no_change_correlation] chunk 19/25 (152 scenarios)
+  [no_change_correlation] chunk 20/25 (160 scenarios)
+  [no_change_correlation] chunk 21/25 (168 scenarios)
+  [no_change_correlation] chunk 22/25 (176 scenarios)
+  [no_change_correlation] chunk 23/25 (184 scenarios)
+  [no_change_correlation] chunk 24/25 (192 scenarios)
+  [no_change_correlation] chunk 25/25 (200 scenarios)
+ablation: no_probe_confidence
+  [no_probe_confidence] chunk 1/25 (8 scenarios)
+  [no_probe_confidence] chunk 2/25 (16 scenarios)
+  [no_probe_confidence] chunk 3/25 (24 scenarios)
+  [no_probe_confidence] chunk 4/25 (32 scenarios)
+  [no_probe_confidence] chunk 5/25 (40 scenarios)
+  [no_probe_confidence] chunk 6/25 (48 scenarios)
+  [no_probe_confidence] chunk 7/25 (56 scenarios)
+  [no_probe_confidence] chunk 8/25 (64 scenarios)
+  [no_probe_confidence] chunk 9/25 (72 scenarios)
+  [no_probe_confidence] chunk 10/25 (80 scenarios)
+  [no_probe_confidence] chunk 11/25 (88 scenarios)
+  [no_probe_confidence] chunk 12/25 (96 scenarios)
+  [no_probe_confidence] chunk 13/25 (104 scenarios)
+  [no_probe_confidence] chunk 14/25 (112 scenarios)
+  [no_probe_confidence] chunk 15/25 (120 scenarios)
+  [no_probe_confidence] chunk 16/25 (128 scenarios)
+  [no_probe_confidence] chunk 17/25 (136 scenarios)
+  [no_probe_confidence] chunk 18/25 (144 scenarios)
+  [no_probe_confidence] chunk 19/25 (152 scenarios)
+  [no_probe_confidence] chunk 20/25 (160 scenarios)
+  [no_probe_confidence] chunk 21/25 (168 scenarios)
+  [no_probe_confidence] chunk 22/25 (176 scenarios)
+  [no_probe_confidence] chunk 23/25 (184 scenarios)
+  [no_probe_confidence] chunk 24/25 (192 scenarios)
+  [no_probe_confidence] chunk 25/25 (200 scenarios)
+ablation: no_scope_agent
+  [no_scope_agent] chunk 1/25 (8 scenarios)
+  [no_scope_agent] chunk 2/25 (16 scenarios)
+  [no_scope_agent] chunk 3/25 (24 scenarios)
+  [no_scope_agent] chunk 4/25 (32 scenarios)
+  [no_scope_agent] chunk 5/25 (40 scenarios)
+  [no_scope_agent] chunk 6/25 (48 scenarios)
+  [no_scope_agent] chunk 7/25 (56 scenarios)
+  [no_scope_agent] chunk 8/25 (64 scenarios)
+  [no_scope_agent] chunk 9/25 (72 scenarios)
+  [no_scope_agent] chunk 10/25 (80 scenarios)
+  [no_scope_agent] chunk 11/25 (88 scenarios)
+  [no_scope_agent] chunk 12/25 (96 scenarios)
+  [no_scope_agent] chunk 13/25 (104 scenarios)
+  [no_scope_agent] chunk 14/25 (112 scenarios)
+  [no_scope_agent] chunk 15/25 (120 scenarios)
+  [no_scope_agent] chunk 16/25 (128 scenarios)
+  [no_scope_agent] chunk 17/25 (136 scenarios)
+  [no_scope_agent] chunk 18/25 (144 scenarios)
+  [no_scope_agent] chunk 19/25 (152 scenarios)
+  [no_scope_agent] chunk 20/25 (160 scenarios)
+  [no_scope_agent] chunk 21/25 (168 scenarios)
+  [no_scope_agent] chunk 22/25 (176 scenarios)
+  [no_scope_agent] chunk 23/25 (184 scenarios)
+  [no_scope_agent] chunk 24/25 (192 scenarios)
+  [no_scope_agent] chunk 25/25 (200 scenarios)
+
+==============================================================
+scenarios                 1000
+detection rate            1.000
+top-1 root cause          0.652
+top-3 root cause          0.897
+top-1 on hard subset      0.277 (n=242)
+scope precision / recall  1.000 / 0.993
+corrective action rate    0.895
+recovered and verified    0.919
+rollback rate             0.081
+false closure rate        0.001
+unsafe action rate        0.000
+mean Grafana MCP calls    16.9
+sessions protected        32,563,290
+==============================================================
+configuration               detect   top-1  recover    mcp
+full                         1.000   0.645    0.945   17.0
+no_change_correlation        1.000   0.515    0.790   17.0
+no_probe_confidence          1.000   0.650    0.945   16.9
+no_scope_agent               1.000   0.640    0.940   17.0
+
+rewrote the ablation block of bench\results\summary.json
