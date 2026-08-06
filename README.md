@@ -346,7 +346,8 @@ docs/                 architecture, MCP chain, benchmark, performance, threat mo
 | [ACCESSIBILITY_CONFORMANCE.md](docs/ACCESSIBILITY_CONFORMANCE.md) | the product's own conformance |
 | [model_card.md](docs/model_card.md) · [dataset_card.md](docs/dataset_card.md) | what the measurement models do and do not claim |
 | [MEDIA_RIGHTS.md](docs/MEDIA_RIGHTS.md) | provenance of every asset |
-| [DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md) | the three-minute demonstration |
+| [DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md) · [RECORDING_CHECKLIST.md](docs/RECORDING_CHECKLIST.md) | the three-minute demonstration, and how to record it |
+| [screenshots/](docs/screenshots/) | the seven product views, captured from a real run |
 | [adr/](docs/adr/) | twelve decisions, with the alternatives rejected and what each one costs |
 | [`sbom.json`](sbom.json) | CycloneDX software bill of materials — `python tools/generate_sbom.py` |
 
