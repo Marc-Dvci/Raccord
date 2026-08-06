@@ -1,4 +1,4 @@
-﻿"""Scope, quality, change-correlation, diagnosis, communication and learning agents.
+"""Scope, quality, change-correlation, diagnosis, communication and learning agents.
 
 These agents are deterministic by construction. They read typed records, apply
 explicit rules and produce typed records with citations. When a Gemini reasoning
@@ -752,9 +752,8 @@ Error budget consumed: {incident.error_budget_consumed:.1%}
 
         add("post_incident", f"Post-incident review: {incident.title}", f"""
 Root cause: {top.failure_class.value if top else 'unknown'}
-Detection: {incident.timings.get('time_to_detect_s', 0):.1f}s | Scope: {incident.timings.get('time_to_scope_s', 0):.1f}s
-Evidence complete: {incident.timings.get('time_to_evidence_s', 0):.1f}s | Approval: {incident.timings.get('time_to_approval_s', 0):.1f}s
-Recovery: {incident.timings.get('time_to_recovery_s', 0):.1f}s
+Audience impact (programme clock): degraded for {_duration(incident)}; detected {incident.timings.get('time_to_detect_s', 0):.1f}s after onset.
+Agent working time (wall clock): scope {incident.timings.get('time_to_scope_s', 0):.1f}s | evidence {incident.timings.get('time_to_evidence_s', 0):.1f}s | approval {incident.timings.get('time_to_approval_s', 0):.1f}s | verified recovery {incident.timings.get('time_to_recovery_s', 0):.1f}s
 MCP calls: {incident.timings.get('mcp_calls', 0):.0f}
 """)
         return out
@@ -816,10 +815,18 @@ def _public_status_body(scope: Scope, recovered: bool) -> str:
 
 
 def _duration(incident: Incident) -> str:
-    ttr = incident.timings.get("time_to_recovery_s")
-    if not ttr:
+    """How long the audience was affected, on the programme clock.
+
+    Deliberately *not* ``time_to_recovery_s``: that is a stopwatch on the agent's
+    own work, in wall-clock seconds, so dividing it by 60 reported a real
+    multi-minute degradation to an executive as "0.0 minutes".
+    """
+    outage = incident.timings.get("outage_seconds")
+    if not outage:
         return "an ongoing period"
-    return f"{ttr / 60:.1f} minutes"
+    if outage < 90:
+        return f"{outage:.0f} seconds"
+    return f"{outage / 60:.1f} minutes"
 
 
 # ---------------------------------------------------------------------------
@@ -881,6 +888,7 @@ class ReliabilityLearningAgent:
                 c.description for c in incident.changes[:3]
             ),
             time_to_detect_s=incident.timings.get("time_to_detect_s", 0.0),
+            outage_seconds=incident.timings.get("outage_seconds", 0.0),
             time_to_scope_s=incident.timings.get("time_to_scope_s", 0.0),
             time_to_evidence_s=incident.timings.get("time_to_evidence_s", 0.0),
             time_to_approval_s=incident.timings.get("time_to_approval_s", 0.0),

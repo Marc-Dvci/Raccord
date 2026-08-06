@@ -551,7 +551,12 @@ class PostIncidentReview(Frozen):
     incident_id: str
     root_cause: FailureClass
     contributing_factors: tuple[str, ...]
+    # `time_to_detect_s` and `outage_seconds` are on the programme clock: they
+    # describe what the audience experienced. Everything from `time_to_scope_s`
+    # to `time_to_recovery_s` is a wall-clock stopwatch on the agent's own work.
+    # The two are not comparable and must not be presented as if they were.
     time_to_detect_s: float
+    outage_seconds: float = 0.0
     time_to_scope_s: float
     time_to_evidence_s: float
     time_to_approval_s: float

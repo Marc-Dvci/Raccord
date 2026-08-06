@@ -166,3 +166,28 @@ async def test_public_status_contains_no_internal_detail():
         assert leak not in body, leak
     assert not public[0].contains_internal_detail
     await rt.aclose()
+
+
+async def test_audience_impact_is_measured_on_the_programme_clock():
+    """The two clocks must not be confused.
+
+    `time_to_detect_s` and `outage_seconds` describe what an audience lived
+    through, on the twin's programme clock. `time_to_recovery_s` is a stopwatch
+    on the agent's own work. Reporting the second as an outage duration once put
+    "degraded for 0.0 minutes" in front of an executive.
+    """
+    rt = await _drifting_runtime()
+    result = await rt.run_incident()
+    timings = result.incident.timings
+
+    outage = timings["outage_seconds"]
+    assert outage >= timings["time_to_detect_s"] > 0
+    # The agent's own working time is orders of magnitude smaller, which is
+    # exactly why it cannot stand in for the audience-visible duration.
+    assert timings["time_to_recovery_s"] < outage
+
+    executive = [c for c in result.incident.communications if c.audience == "executive"]
+    assert executive
+    assert "for 0.0 minutes" not in executive[0].body
+    assert "0 seconds" not in executive[0].body
+    await rt.aclose()

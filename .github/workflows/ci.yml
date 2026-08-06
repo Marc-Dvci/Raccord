@@ -61,9 +61,16 @@ jobs:
             || (echo "::error::generated Grafana assets are stale - run tools/generate_grafana_assets.py" && exit 1)
 
       # A product about accessibility that is not itself accessible is
-      # self-refuting. 63 checks; any regression fails the build.
+      # self-refuting. 63 checks; any regression fails the build. The committed
+      # report is diffed too, for the same reason the Grafana assets are: a
+      # published conformance artifact that no longer describes the product is
+      # worse than no artifact at all.
       - name: product accessibility audit
         run: python tools/a11y_audit.py --out docs/accessibility_audit.json
+      - name: the committed accessibility report matches the audit
+        run: |
+          git diff --exit-code docs/accessibility_audit.json \
+            || (echo "::error::docs/accessibility_audit.json is stale - run tools/a11y_audit.py --out docs/accessibility_audit.json" && exit 1)
 
       # The accelerated alignment kernels must produce the reference's exact
       # alignment - not merely an equally optimal one (docs/PERFORMANCE.md).

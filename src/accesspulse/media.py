@@ -1,4 +1,4 @@
-﻿"""Original demonstration media: "The Lumiere Protocol".
+"""Original demonstration media: "The Lumiere Protocol".
 
 Every line of dialogue, every scene description and every translation in this
 file is original work written for this project and licensed under the repository

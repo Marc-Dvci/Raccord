@@ -211,7 +211,12 @@ class IncidentCoordinator:
         self.quality_notes: dict[str, list[str]] = {}
         self.causal: dict[str, list] = {}
         self.deep_links: dict[str, str] = {}
+        # Two clocks, deliberately kept apart. `_t0` is a wall-clock stopwatch on
+        # the agent's own work; `_onset` is the programme clock the twin runs on,
+        # which is what an audience actually experienced. Mixing them produces
+        # nonsense like "detected after 200 s, recovered after 3 s".
         self._t0: dict[str, float] = {}
+        self._onset: dict[str, datetime] = {}
 
     # -- helpers -----------------------------------------------------------
     def _step(self, agent: str, step: str, incident_id: str):
@@ -264,6 +269,7 @@ class IncidentCoordinator:
         self._t0[incident_id] = time.perf_counter()
 
         onset = fault_onset or alert.fired_at
+        self._onset[incident_id] = onset
         incident.timings["time_to_detect_s"] = max(
             0.0, (alert.fired_at - onset).total_seconds()
         )
@@ -528,6 +534,15 @@ class IncidentCoordinator:
             incident.timings["time_to_recovery_s"] = (
                 time.perf_counter() - self._t0[incident.incident_id]
             )
+            # What the audience lived through, on the programme clock: fault
+            # onset until the re-measurement that proved the feature back.
+            # `time_to_recovery_s` above is the agent's own working time and is
+            # not comparable to it.
+            onset = self._onset.get(incident.incident_id)
+            if onset is not None:
+                incident.timings["outage_seconds"] = max(
+                    0.0, (self.assurance.sim.wall_clock - onset).total_seconds()
+                )
         else:
             bad = [a.name for a in failing(incident.assertions) if a.mandatory]
             machine.note("verification_failed", "verification_agent", failing=bad)
