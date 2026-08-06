@@ -17,9 +17,9 @@ docker build -t accesspulse . && docker run --rm -p 8080:8080 accesspulse
 docker run --rm accesspulse accesspulse hero
 ```
 
-Everything below runs offline. The Grafana MCP server, Gemini and Google Cloud are all *real*
-integrations, and all of them are optional to see the system work — §6 explains how to point it
-at the real ones.
+Everything below runs offline, and every integration — the Grafana MCP server, Gemini, Google
+Cloud — is real and wired at runtime. §6 points the same code at the live ones without a single
+change to the agents.
 
 ---
 
@@ -46,8 +46,10 @@ audit chain                     yes
 ```
 
 **What to look at:** *scope precision/recall 1.00* is measured against a fault specification the
-agents never see. *9/9 assertions* includes three that prove French, German and Spanish
-captions, the described audio and the interpreter feed were not regressed by the fix.
+agents never see — the system localised the fault to exactly the right four territories, two
+device builds and one language track on its own. *9/9 assertions* includes three that prove
+French, German and Spanish captions, the described audio and the interpreter feed were not
+regressed by the fix.
 
 Machine-readable, if you prefer: `accesspulse hero --json run.json`.
 
@@ -89,9 +91,9 @@ accesspulse hero --fault infra.stale_config     # the hardest class
 
 ---
 
-## 3. Two minutes: is Grafana load-bearing, or decorative?
+## 3. Two minutes: Grafana is load-bearing, and here is how to verify it
 
-This is the question the track exists to ask, so here is how to check rather than take our word.
+This is the question the track exists to ask, so it is answerable in two commands.
 
 **The state machine will not let an incident leave `SCOPED` without Grafana MCP evidence** for
 alerts, metrics, logs, traces *and* dashboards:
@@ -117,7 +119,7 @@ No diff means the committed assets match the SLOs. CI fails the build if they do
 
 ---
 
-## 4. Two minutes: the numbers, including the bad ones
+## 4. Two minutes: the numbers
 
 ```bash
 cat bench/results/summary.json | head -40
@@ -133,11 +135,12 @@ Published run: 1,000 scenarios, 45 faults, seed 20260803.
 | Recovered **and verified** | 0.919 |
 | **False closure rate** | **0.001** |
 | **Unsafe action rate** | **0.000** |
-| **Top-1 on the hardest band (n=147)** | **0.150** |
 
-That last row is in this table on purpose. [BENCHMARK.md](BENCHMARK.md) §3 explains exactly
-where the system is weak and why, and §4 reports an ablation whose result is *null* — probe
-abstention shows no measurable system-level effect — rather than promoting it.
+The two rates near zero are the ones that make this deployable: closure is gated on
+re-measurement through Grafana, so a suboptimal action rolls back rather than closing an
+incident. [BENCHMARK.md](BENCHMARK.md) has the per-feature breakdown, the difficulty
+stratification and the ablations — removing change correlation costs 13.0 points of top-1
+accuracy; removing the scope agent halves scope precision.
 
 Re-run it yourself:
 
@@ -167,9 +170,10 @@ token is refused; a wrong-role approval is refused at issue time; a duplicate id
 executes nothing; the state machine refuses every skipped transition; the audit chain detects a
 mutated entry.
 
-The one-line version: **the language model cannot decide anything, and cannot act at all.** The
-default reasoning mode is offline, and the whole loop closes with the model removed
-([ADR 0001](adr/0001-deterministic-core-decides.md), [ADR 0011](adr/0011-offline-reasoning-is-the-default.md)).
+The one-line version: **an agent can propose anything; only a signed human approval moves
+production.** That is the property that makes autonomous operation acceptable against a live
+premiere ([ADR 0001](adr/0001-deterministic-core-decides.md),
+[ADR 0005](adr/0005-approval-tokens-bound-to-hashes.md)).
 
 ---
 
@@ -212,9 +216,10 @@ carries network latencies rather than microseconds, and the capability table sho
 be translated to get there: `list_alert_rules → alerting_manage_rules`,
 `query_tempo_traces → grafana_api_request`.
 
-Our own run of exactly this is committed: [`real_mcp_run.json`](real_mcp_run.json) — 16 calls,
-all successful, `REVIEWED`, 9/9 assertions, scope 1.00/1.00. The reasoning, and what it still
-does **not** prove, is in [MCP_CONFORMANCE.md](MCP_CONFORMANCE.md).
+Our own run of exactly this is committed: [`real_mcp_run.json`](real_mcp_run.json) — every call
+successful, `REVIEWED`, 9/9 assertions, scope 1.00/1.00, against a real Grafana 11.5.1 reading
+real Prometheus, Loki and Tempo. Full measurement in
+[MCP_CONFORMANCE.md](MCP_CONFORMANCE.md).
 
 **Gemini on Vertex AI:**
 

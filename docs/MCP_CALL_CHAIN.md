@@ -40,6 +40,15 @@ Grafana.
 
 ## The mandatory chain
 
+Fourteen steps the investigation cannot skip, plus three conditional calls — **16.9 calls per
+incident** across the 1,000-scenario benchmark:
+
+| Conditional call | When it fires |
+|---|---|
+| `query_tempo_traces`, second issue | the component-scoped trace search returned `resultCount: 0`, so it is re-issued unscoped rather than concluding there is no trace evidence |
+| `list_incidents` | reconciles against incidents already open in Grafana before declaring a new one |
+| `create_annotation`, approved action | the approved action is annotated on the dashboards as well as added to the incident timeline |
+
 ### 1 · `list_alert_rules`
 
 ```json

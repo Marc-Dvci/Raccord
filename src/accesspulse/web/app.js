@@ -334,8 +334,12 @@ function renderIncident(data) {
     ? el('div', { class: 'stat-row' },
       stat('Root cause', review.root_cause),
       stat('Diagnosis correct', review.diagnosis_correct ? 'yes' : 'no'),
-      stat('Time to detect', `${fmt(review.time_to_detect_s, 1)}s`),
-      stat('Time to recovery', `${fmt(review.time_to_recovery_s, 1)}s`),
+      // Two clocks. Detection is programme time (what the audience lived
+      // through); recovery is a stopwatch on the agent's own work. Labelled so
+      // they are never read as one number against the other.
+      stat('Audience impact (programme)', `${fmt(review.outage_seconds, 1)}s`),
+      stat('Time to detect (programme)', `${fmt(review.time_to_detect_s, 1)}s`),
+      stat('Agent working time', `${fmt(review.time_to_recovery_s, 1)}s`),
       stat('Sessions affected', review.affected_sessions.toLocaleString()),
       stat('Sessions protected', review.protected_sessions.toLocaleString()))
     : el('p', { class: 'hint' }, 'Not yet reviewed.'));
@@ -534,6 +538,16 @@ async function loadBenchmark() {
         stat('Recovery verified', pct(b.verification.recovered_rate)),
         stat('Unsafe actions', b.agent.unsafe_action_rate === 0 ? '0'
           : pct(b.agent.unsafe_action_rate))));
+
+    // The Diagnosis table reports the harness's hard subset (difficulty >= 0.70).
+    // docs/BENCHMARK.md stratifies further; labelled here so the two read as one
+    // measurement rather than two.
+    if (b.diagnosis && b.diagnosis.hard_subset_size) {
+      body.append(el('p', { class: 'hint' },
+        `Diagnosis accuracy below is reported overall and on the hard subset — difficulty ≥ 0.70, `
+        + `n = ${b.diagnosis.hard_subset_size}. docs/BENCHMARK.md has the full difficulty `
+        + 'stratification and the per-feature breakdown.'));
+    }
 
     const section = (title, obj) => {
       const rows = Object.entries(obj).map(([k, v]) => [

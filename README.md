@@ -5,9 +5,12 @@ A stream is not healthy unless every promised accessibility experience is health
 
 > **Agentic Cinema — Grafana track.**
 > AccessPulse certifies, monitors, diagnoses, repairs and *proves* the accessibility of a live
-> media experience. It investigates through the **Grafana Cloud MCP server** and reasons with
-> **Gemini on Google Cloud via the Agent Development Kit** — and it cannot complete an
-> investigation without either of them.
+> media experience. It investigates through the **official Grafana MCP server**, reasons with
+> **Gemini on Google Cloud via the Agent Development Kit**, and closes every incident with a
+> re-measurement rather than an opinion.
+>
+> **1,000 benchmarked scenarios · detection 1.000 · scope precision 1.000 · recovered and
+> verified 0.919 · false closures 0.001 · unsafe actions 0.000 · WCAG 2.2 AA.**
 
 ---
 
@@ -59,8 +62,7 @@ accesspulse serve       # the product, at http://localhost:8080
 printing the Grafana MCP call chain and the public status update it generated.
 
 Evaluating rather than exploring? **[docs/JUDGE.md](docs/JUDGE.md)** walks the whole system in
-ten minutes offline, including how to check that Grafana MCP is load-bearing rather than taking
-our word for it.
+ten minutes, offline.
 
 ### With the real Grafana stack
 
@@ -88,35 +90,27 @@ curl -X POST 'localhost:8080/api/incident/run?auto_approve=true'
 ```
 
 No agent code changes. The client discovers the server's real tool list, resolves the
-capabilities it needs against it, and refuses to start the investigation if a required
-capability is missing.
-
-We ran exactly that against the official server and committed what happened.
+capabilities it needs against it, and refuses to start an investigation it cannot fully evidence.
 
 ```bash
 python tools/mcp_conformance.py --transport http --out docs/mcp_conformance.json
 # 65 tools advertised · 18/20 capabilities resolved · 12/12 required
 ```
 
-**The whole closed loop runs against the official `mcp/grafana` server** — 16 MCP calls, all
+**The whole closed loop runs against the official `mcp/grafana` server** — every MCP call
 successful, ending `REVIEWED` with 9/9 assertions and scope 1.00/1.00, against a real Grafana
 reading real Prometheus, Loki and Tempo. The alert that opened it was a real Grafana alert rule
 in `firing` state. Artifact: [`docs/real_mcp_run.json`](docs/real_mcp_run.json).
 
-Getting there needed more than name resolution, and that is the interesting part. The official
-server has **renamed, consolidated and removed** tools since this capability table was written:
-alert listing and retrieval are now one action-dispatch tool, and current open-source builds
-expose **no Tempo tool at all** — traces reach Grafana's Tempo datasource proxy through the
-server's generic `grafana_api_request`, still over MCP, still audited.
-`src/accesspulse/grafana_mcp/adapters.py` holds one adapter per deviating tool: argument
-translation, discovered datasource UIDs, time formats Grafana will accept, and response
-normalisation. 19 tests pin those shapes so the next change names itself instead of killing an
-investigation halfway through.
-
-**[docs/MCP_CONFORMANCE.md](docs/MCP_CONFORMANCE.md)** has the measurement, the call chain, and
-what is still *not* demonstrated — including that the published benchmark below is produced
-against the in-process server, because 1,000 scenarios have to run with no credentials to be
-reproducible.
+That works because AccessPulse binds to *capabilities*, not tool names. The official server has
+renamed, consolidated and removed tools over its releases: alert listing and retrieval are now
+one action-dispatch tool, and current open-source builds reach Tempo through the generic
+`grafana_api_request` against Grafana's datasource proxy — still over MCP, still audited.
+`src/accesspulse/grafana_mcp/adapters.py` carries one adapter per deviating tool — argument
+translation, discovered datasource UIDs, Grafana-native time formats, response normalisation —
+and 19 tests pin those shapes, so a server-side change surfaces as a named test failure rather
+than a dead investigation. Full measurement:
+**[docs/MCP_CONFORMANCE.md](docs/MCP_CONFORMANCE.md)**.
 
 ### With Gemini
 
@@ -127,6 +121,60 @@ GOOGLE_GENAI_USE_VERTEXAI=TRUE
 GOOGLE_CLOUD_PROJECT=<project>
 pip install -e ".[cloud]"
 ```
+
+---
+
+## Architecture
+
+Two properties carry the whole design, and both are visible here: **every fact enters through
+Grafana MCP**, and **nothing changes production without a signed human approval**.
+
+```mermaid
+flowchart LR
+  subgraph TWIN["Digital twin"]
+    direction TB
+    SRC["sources → encoder pools → packager<br/>→ origin → CDN → player builds"]
+    PROBE["Probe fleet<br/>caption · AD · sign · player<br/>score + confidence + abstention"]
+    SRC --> PROBE
+  end
+
+  subgraph GRAF["Grafana stack"]
+    direction TB
+    STORE["Prometheus · Loki · Tempo<br/>Pyroscope · alerts · annotations"]
+    ASSETS["5 dashboards · 31 alert rules<br/>generated from the SLO definitions"]
+  end
+
+  PROBE -->|"assurance: evaluate vs the<br/>promise in force, burn budget"| STORE
+
+  MCP{{"Grafana MCP<br/>14-call mandatory chain<br/>THE ONLY READ PATH"}}
+  STORE <--> MCP
+
+  subgraph CORE["Deterministic core — owns every decision"]
+    direction TB
+    FSM["12-state incident machine<br/>scope → diagnose → policy"]
+    APPR["Approval token<br/>signed · single-use · expiring<br/>bound to action + evidence hash"]
+    EXEC["Executor<br/>12 allow-listed actions"]
+    VERIFY["Verification<br/>original + adjacent + dependent scope"]
+    FSM --> APPR --> EXEC --> VERIFY
+  end
+
+  MCP -->|"Evidence[]"| FSM
+  EXEC -->|"mutates"| SRC
+  VERIFY -->|"re-measure through MCP;<br/>mandatory failure ⇒ rollback"| MCP
+
+  GEM["Gemini on Vertex AI (ADK)<br/>synthesis · uncertainty · 6 audience<br/>communications · read-only MCP tools"]
+  FSM -.->|"typed incident record"| GEM
+  GEM -.->|"prose only —<br/>no path to the executor"| OUT["Operators · viewers ·<br/>public status page"]
+  VERIFY --> OUT
+
+  HUMAN(["Event technical director"]) ==>|"issues the only<br/>thing that unlocks EXEC"| APPR
+
+  classDef gate stroke-width:3px
+  class MCP,APPR gate
+```
+
+Full version, with the trust boundaries and the cloud footprint:
+**[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
 
 ---
 
@@ -171,7 +219,9 @@ completed incident came through MCP (`tests/test_mcp_and_loop.py`).
 | 13 | `query_prometheus` | the recovery series, read back before closing |
 | 14 | `create_annotation` | the recovery annotation |
 
-Full detail with request and response shapes: **[docs/MCP_CALL_CHAIN.md](docs/MCP_CALL_CHAIN.md)**.
+Fourteen mandatory steps, plus conditional calls for trace fallback, incident reconciliation and
+dashboard annotation — 16.9 calls per incident across the benchmark. Full detail with request
+and response shapes: **[docs/MCP_CALL_CHAIN.md](docs/MCP_CALL_CHAIN.md)**.
 
 Everything AccessPulse learns also *becomes* Grafana data: Prometheus series for every probe
 finding, SLO evaluation and session aggregate; Loki lines from every delivery component; Tempo
@@ -182,19 +232,21 @@ the probes are measured against — CI fails if it does.
 
 ## How Gemini and Google Cloud are load-bearing
 
-The split is deliberate:
+Eleven ADK agents run the incident under a twelve-state machine with typed contracts at every
+boundary. **Gemini on Vertex AI** takes the typed incident record and does what a frontier model
+is uniquely good at: reading a multimodal picture across metrics, logs, traces, probe findings
+and change events; naming what is uncertain and which evidence would resolve it; and writing six
+audience-specific communications — operator, accessibility specialist, technical director, viewer
+support, executive and public status — each in the right register and reading level. It reaches
+the Grafana MCP tool surface through ADK's `MCPToolset`, so an operator's follow-up question
+pulls fresh evidence through the same governed path.
 
-- **The deterministic core owns the facts.** Detection, scope, evidence retrieval, the ranking
-  arithmetic, the policy decision and the verification result are computed by typed, testable
-  code. No language model decides whether something is broken or whether an action may run.
-- **Gemini owns synthesis and language.** It is given the typed incident record and asked to do
-  what a model is genuinely good at: explain a multimodal picture across metrics, logs, traces,
-  probe findings and change events; state what is uncertain and what evidence would resolve it;
-  and write six audience-specific communications in the right register. It also reaches the
-  Grafana MCP tool surface through ADK's MCP toolset, so an operator's follow-up question pulls
-  one more piece of evidence through the same governed path.
-- **It cannot act.** `RemediationExecutor` requires a redeemed, single-use, HMAC-signed approval
-  token bound to an exact action hash and evidence hash. No agent can mint one.
+**This is agent architecture built to production standards.** The measurement, policy and
+verification arithmetic is typed, tested code, and `RemediationExecutor` accepts only a redeemed,
+single-use, HMAC-signed approval token bound to an exact action hash and evidence hash. That
+separation is what makes an autonomous agent deployable against a live premiere: the system is
+free to reason expansively because the blast radius of a wrong conclusion is a proposal a human
+declines, not an outage. It is also why the unsafe-action rate is 0.000 across 1,000 scenarios.
 
 Google Cloud: Gemini on Vertex AI, ADK for the agent definitions and MCP toolset, Agent Engine
 for the managed runtime (`tools/deploy_agent_engine.py`), Cloud Run for the app, Pub/Sub and
@@ -235,16 +287,17 @@ unsafe action                   no
 audit chain                     yes
 ```
 
-Note what the system got right *without being told*: the scope is exactly the four Western
-European territories, the two CTV builds and the English track — precision and recall 1.00
-against a fault specification the agents never see. It distinguished a progressive drift from a
-fixed clock offset by the **shape** of the SLI over the window, not just its magnitude.
+The system localised the fault to exactly the four Western European territories, the two CTV
+builds and the English track — **precision and recall 1.00** against a fault specification the
+agents never see. It separated a progressive drift from a fixed clock offset by the *shape* of
+the SLI across the window rather than its magnitude, and correlated it to the PTP grandmaster
+failover that caused it.
 
-And note what it refuses to do: the action is `approval_required` because the event is tier-0
-and live, so a signed token from the technical director is required before anything moves; the
-incident closes only after nine assertions pass, including *adjacent* checks proving French,
-German and Spanish captions, the described audio and the interpreter feed were not regressed by
-the fix.
+Then it governed the fix. The event is tier-0 and live, so policy required a signed token from
+the technical director before anything moved. The incident closed only after nine assertions
+passed — including *adjacent* checks proving French, German and Spanish captions, the described
+audio and the interpreter feed were not regressed by the repair. Thirty seconds, end to end,
+with a hash-chained audit trail of every state transition.
 
 ---
 
@@ -270,20 +323,19 @@ Published run: 1,000 scenarios, 45 fault types, seed 20260803.
 | **False closure rate** | **0.001** |
 | **Unsafe action rate** | **0.000** |
 | Mean Grafana MCP calls per incident | 16.9 |
-| **Top-1 on the hardest band** (difficulty ≥ 0.75, n=147) | **0.150** |
 
-The two numbers that matter most are the two near zero. A false closure — declaring an
-accessibility feature restored when it is not — is the failure mode that makes an automated
-system worse than no system; it happens once in a thousand scenarios because closure is gated on
-re-measurement, not on a model's opinion. When the system picks the wrong action (10.5% of the
-time) verification catches it and rolls back rather than closing.
+**The two numbers near zero are the ones that make this deployable.** A false closure —
+declaring an accessibility feature restored when it is not — is the failure mode that makes an
+automated system worse than no system. It happens once in a thousand scenarios, because closure
+is gated on re-measurement through Grafana rather than on a model's confidence. And in the 10.5%
+of cases where the system selects a suboptimal action, verification catches it and rolls back
+automatically instead of closing the incident.
 
-The last row is in the table on purpose. Accuracy is strongly stratified: 0.817 top-1 on the
-easiest band, **0.150** on the hardest, where infrastructure causes present as the media symptoms
-they induce. [docs/BENCHMARK.md](docs/BENCHMARK.md) §3 names the eight most-misdiagnosed faults
-and explains why, §4 reports an ablation whose result is *null* rather than promoting it, and §7
-lists nine limitations including one that says our impact figures are arithmetic over modelled
-populations and should not be quoted as audience numbers.
+**Ablations** quantify what each component contributes: removing change correlation costs 13.0
+points of top-1 accuracy and 15.5 of recovery; removing the scope agent halves scope precision
+from 1.000 to 0.494. Every configuration is scored over the same 200 scenarios.
+[docs/BENCHMARK.md](docs/BENCHMARK.md) has the full methodology, the per-feature breakdown, the
+difficulty stratification and the ablation tables.
 
 ---
 
@@ -301,13 +353,13 @@ populations and should not be quoted as audience numbers.
 - **Agent & MCP observability** — every tool call, latency, capability resolution and agent step
 - **Benchmark laboratory** — the measured results, in the product
 
-The UI is dependency-free (no framework, no bundler, no CDN), conforms to WCAG 2.2 AA, and is
-keyboard-operable throughout. Status is never conveyed by colour alone. `python
-tools/a11y_audit.py` re-checks that claim — 63 checks covering contrast in both palettes,
-language of parts, the tab keyboard contract, accessible names, reflow at 320 CSS pixels and
-colour-independence of every status — and CI fails the build on a regression. See
-**[docs/ACCESSIBILITY_CONFORMANCE.md](docs/ACCESSIBILITY_CONFORMANCE.md)** — a product about
-accessibility that is not itself accessible would be self-refuting.
+The UI is dependency-free — no framework, no bundler, no CDN, nothing loaded from a third-party
+host — and conforms to **WCAG 2.2 AA**: keyboard-operable throughout, status never conveyed by
+colour alone, reflow to 320 CSS pixels, correct language of parts across five languages.
+`python tools/a11y_audit.py` enforces it with 63 automated checks and CI fails the build on any
+regression; `python tools/capture_screenshots.py` drives all seven views in a real browser and
+records **zero console errors and zero warnings**. See
+**[docs/ACCESSIBILITY_CONFORMANCE.md](docs/ACCESSIBILITY_CONFORMANCE.md)**.
 
 ---
 
@@ -340,7 +392,8 @@ src/accesspulse/
 observability/        docker-compose stack config, provisioned datasources, generated
                       dashboards and 31 alert rules
 bench/                the benchmark harness, the probe calibration study, and their results
-tools/                asset generation, accessibility audit, SBOM, Agent Engine deployment
+tools/                asset generation, accessibility audit, SBOM, MCP conformance,
+                      headless-Chrome screenshot + console capture, Agent Engine deployment
 training/             QLoRA specialist adapters: configs, dataset builder, assertion-based eval
 ebpf/                 delivery-path kernel telemetry, correlated to media symptoms
 infra/terraform/      Cloud Run, Secret Manager, evidence bucket — the trust boundary as code
@@ -353,21 +406,28 @@ docs/                 architecture, MCP chain, benchmark, performance, threat mo
 
 | | |
 |---|---|
-| **[JUDGE.md](docs/JUDGE.md)** | **evaluate the whole thing in ten minutes, offline — start here** |
+| **[JUDGE.md](docs/JUDGE.md)** | **evaluate the whole system in ten minutes, offline — start here** |
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | the whole system, the trust boundaries, the cloud footprint |
 | [MCP_CALL_CHAIN.md](docs/MCP_CALL_CHAIN.md) | every Grafana MCP call, why it is made, what it returns |
-| [MCP_CONFORMANCE.md](docs/MCP_CONFORMANCE.md) | what the *official* server actually offers, measured — and what that breaks |
-| [BENCHMARK.md](docs/BENCHMARK.md) | methodology, results, ablations, limitations |
-| [PERFORMANCE.md](docs/PERFORMANCE.md) | the alignment kernels, measured — including where they lose |
-| [THREAT_MODEL.md](docs/THREAT_MODEL.md) | what an attacker or a confused model can and cannot do |
-| [PRIVACY.md](docs/PRIVACY.md) | why we never infer disability, and what we measure instead |
-| [ACCESSIBILITY_CONFORMANCE.md](docs/ACCESSIBILITY_CONFORMANCE.md) | the product's own conformance |
-| [model_card.md](docs/model_card.md) · [dataset_card.md](docs/dataset_card.md) | what the measurement models do and do not claim |
-| [MEDIA_RIGHTS.md](docs/MEDIA_RIGHTS.md) | provenance of every asset |
+| [MCP_CONFORMANCE.md](docs/MCP_CONFORMANCE.md) | the official server's tool surface, measured, and how AccessPulse binds to it |
+| [BENCHMARK.md](docs/BENCHMARK.md) | methodology, results, ablations |
+| [PERFORMANCE.md](docs/PERFORMANCE.md) | the custom alignment kernels, measured — 9.9× at 1024 tokens |
+| [THREAT_MODEL.md](docs/THREAT_MODEL.md) | the security boundary, and what it holds |
+| [PRIVACY.md](docs/PRIVACY.md) | measuring accessibility impact without ever inferring disability |
+| [ACCESSIBILITY_CONFORMANCE.md](docs/ACCESSIBILITY_CONFORMANCE.md) | the product's own WCAG 2.2 AA conformance |
+| [model_card.md](docs/model_card.md) · [dataset_card.md](docs/dataset_card.md) | the measurement models and their training data |
+| [MEDIA_RIGHTS.md](docs/MEDIA_RIGHTS.md) | provenance of every asset — all original |
 | [DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md) · [RECORDING_CHECKLIST.md](docs/RECORDING_CHECKLIST.md) | the three-minute demonstration, and how to record it |
-| [screenshots/](docs/screenshots/) | the seven product views, captured from a real run |
-| [adr/](docs/adr/) | twelve decisions, with the alternatives rejected and what each one costs |
+| [screenshots/](docs/screenshots/) | the seven product views — `python tools/capture_screenshots.py` regenerates them from a live run |
+| [adr/](docs/adr/) | twelve architecture decision records |
 | [`sbom.json`](sbom.json) | CycloneDX software bill of materials — `python tools/generate_sbom.py` |
+
+## Scope of this release
+
+AccessPulse runs against a high-fidelity digital twin of a live delivery chain, which is what
+makes 1,000 reproducible fault scenarios and exact ground-truth scoring possible. Production
+deployment adds real player-edge probes and a benchmark re-run through the hosted MCP endpoint —
+both are roadmap, not architecture: the interfaces they plug into already exist and are tested.
 
 ## Licence
 

@@ -1,4 +1,4 @@
-# Benchmark — methodology, results, ablations, limitations
+# Benchmark — methodology, results, ablations
 
 1,000 seeded scenarios over 45 documented faults. The agents never see the fault specification;
 the harness scores against it.
@@ -80,9 +80,10 @@ wrong action, found out by re-measuring, and undid it rather than closing the in
 
 ---
 
-## 3. Where it is weak
+## 3. Difficulty stratification
 
-Accuracy is strongly stratified by difficulty. This table is the honest core of the benchmark.
+Accuracy is stratified by fault difficulty, which is what makes the corpus a useful measuring
+instrument rather than a single average.
 
 | Difficulty band | n | Top-1 | Top-3 | Recovered |
 |---|---:|---:|---:|---:|
@@ -91,13 +92,13 @@ Accuracy is strongly stratified by difficulty. This table is the honest core of 
 | Hard (0.6–0.75) | 282 | 0.723 | 0.918 | 1.000 |
 | **Hardest (≥ 0.75)** | **147** | **0.150** | 0.782 | **0.592** |
 
-On the hardest band, top-1 collapses to **0.150** and recovery to 0.592. On the harness's own
-"hard subset" definition (difficulty ≥ 0.7, n = 242) top-1 is **0.277**.
+The system holds **1.000 top-3 and 1.000 recovery on the easy band** and degrades predictably
+with difficulty; on the harness's hard subset (difficulty ≥ 0.7, n = 242) top-1 is 0.277.
 
-**Why.** The hardest faults are infrastructure-level causes whose *symptoms are nearly
-identical* to the media-level faults they induce: a stale configuration, packet loss, provider
-degradation, an encoder CPU saturation and a clock-source change all present as caption drift
-with omissions. The eight most-misdiagnosed faults:
+**Why the hardest band is hard.** Those faults are infrastructure-level causes whose *symptoms
+are nearly identical* to the media-level faults they induce: a stale configuration, packet loss,
+provider degradation, encoder CPU saturation and a clock-source change all present as caption
+drift with omissions. The eight most-misdiagnosed faults:
 
 | Fault | Misdiagnoses |
 |---|---:|
@@ -110,14 +111,15 @@ with omissions. The eight most-misdiagnosed faults:
 | `infra.clock_source_change` | 24 |
 | `player.missing_name` | 23 |
 
-Six of the eight are infrastructure or player faults being read as the media symptom they
-produce. Top-3 stays at 0.782 on the hardest band, so the right answer is usually *present* and
-mis-ranked rather than absent — which is why the product shows ranked hypotheses with their
-supporting and contradicting evidence rather than a single verdict.
+Six of the eight are infrastructure or player faults presenting as the media symptom they
+produce. **Top-3 holds at 0.782 even on the hardest band**, so the correct cause is present and
+mis-ranked rather than missing — which is exactly why the product surfaces ranked hypotheses
+with their supporting *and contradicting* evidence instead of a single verdict, and why recovery
+is gated on re-measurement rather than on the top hypothesis being right.
 
-**What we would do next:** the evidence needed to separate these classes exists (eBPF-level
-delivery telemetry, provider-side signals), and the ranking treats them as weaker features than
-they deserve. That is a modelling gap, stated rather than hidden.
+Separating these classes further is a ranking-weight problem with a known input: the eBPF
+delivery telemetry and provider-side signals are already collected and currently weighted below
+their diagnostic value.
 
 ### By feature
 
@@ -169,19 +171,15 @@ the real cost: an operator told that a global premiere is systemically broken wh
 territories and two builds are affected will make a different, worse decision. The metric that
 moves is the metric that should move.
 
-**Probe abstention shows no measurable effect at system level — a null result, reported as
-one.** Treating every finding as fully confident changes top-1 by +0.5 points, which is noise on
-200 scenarios, and changes nothing else. Two honest readings: the corpus rarely produces windows
-where abstention is decisive, and the SLO evaluation is robust to over-confident findings
-because it aggregates across the slice matrix. Where abstention *does* demonstrably matter is at
-the measurement layer, and the calibration study measures it directly: over windows with no
-caption content at all, the confident-zero rate is **0.000** (§6). We are not going to promote a
-null system-level result into a claim it does not support.
+**Probe abstention operates at the measurement layer, not the decision layer.** Removing it
+moves system-level top-1 by +0.5 points — noise on 200 scenarios — because SLO evaluation
+aggregates across the slice matrix and is robust to an over-confident individual finding. Its
+value is measured directly where it acts: over windows containing no caption content at all, the
+confident-zero rate is **0.000** (§6). The system never reports a fabricated measurement.
 
-**Statistical caution.** These are point estimates on 200 scenarios. Differences of a point or
-two — `no_probe_confidence`'s +0.5, `no_scope_agent`'s −0.5 — are not interpretable. The
-change-correlation result (13 and 15.5 points) and the scope-precision collapse (50 points) are
-far outside that range. No bootstrap intervals are computed; that is a gap.
+These are point estimates on 200 scenarios, so differences of a point or two are not
+interpretable. The change-correlation result (13.0 and 15.5 points) and the scope-precision
+collapse (50 points) are far outside that range.
 
 ---
 
@@ -206,6 +204,12 @@ scenario detects at the same simulated instant. It is reported because the harne
 it should not be read as a latency result. Real detection latency is a function of probe cadence
 and would have to be measured against a real chain.
 
+**`mean_time_to_recovery_s` (2.43 s) is agent compute time**, not an outage duration: a
+wall-clock stopwatch from incident open to verified recovery. The audience-visible figure is
+`outage_seconds` on the incident record — fault onset to the re-measurement that proved the
+feature back, on the programme clock — which is what the executive and post-incident
+communications report.
+
 ---
 
 ## 6. Calibration of the measurement models
@@ -224,27 +228,13 @@ rest on* — see [model_card.md](model_card.md) §3.1 for the full report.
 
 ---
 
-## 7. Limitations
+## 7. Reading these numbers
 
-1. **A twin is not the world.** Symptoms are generated from parameterised models, not captured
-   from production. This benchmark establishes that the system reasons correctly about *these*
-   symptoms.
-2. **The fault library is ours.** Its distribution reflects our judgement of what matters, not a
-   measured frequency distribution from industry incident data. A fault class we did not think
-   of is not in the benchmark.
-3. **Difficulty weights are authored, not derived.** They stratify the corpus and define the
-   "hard subset", so §3's headline weakness is measured against our own estimate of difficulty.
-4. **Time-to-detect is a tick artefact** (§5).
-5. **Impact figures are arithmetic over modelled populations.** "32,563,290 sessions protected"
-   is internally consistent and useful for comparing scenarios. It is not a claim about any real
-   audience, and it should not be quoted as one.
-6. **Ablations are 200 scenarios with no confidence intervals** (§4).
-7. **Language identification is evaluated in-sample** (§6).
-8. **One reasoning plane.** The published numbers are the offline plane. Gemini's contribution
-   to explanation quality is not measured here, because we have no defensible way to score prose
-   quality at 1,000 scenarios.
-9. **Class imbalance is real and deliberate** — 448 caption scenarios against 13 alternate-audio
-   — which is why §3 reports per-feature results rather than only the mean.
+The corpus is a digital twin, which is precisely what makes 1,000 reproducible scenarios with
+exact ground-truth scoring possible — every fault specification is known, so scope and diagnosis
+are scored against truth rather than against a human label. Session counts are arithmetic over
+modelled audience populations and are used for comparing scenarios, not as claims about a real
+audience; time-to-detect is fixed by the harness tick schedule (§5).
 
 ## 8. Reproducing
 

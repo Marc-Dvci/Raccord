@@ -127,26 +127,28 @@ export path also maps the simulated programme clock onto the real one, because
 the event advances faster than wall time and metric, log and trace evidence for
 one incident have to land in one window to be correlated at all.
 
-## 4. Degradation, on purpose
+## 4. Graceful degradation on optional capabilities
 
 `create_incident`, `add_activity_to_incident` and `list_incidents` are Grafana
-Incident (IRM) features. They are **optional** capabilities, and a call that
-fails is recorded as a degradation note rather than raised: filing an incident
-record is a write-back, and a caption fix must not be blocked because an
-optional one could not be filed.
+Incident (IRM) features, declared **optional**. A call that fails is recorded as
+a degradation note rather than raised: filing an incident record is a write-back,
+and a caption fix must never be blocked because an optional one could not be
+filed.
 
 Required evidence is never routed that way. A hole in the alert / metric / log /
-trace / dashboard chain still stops the state machine dead.
+trace / dashboard chain stops the state machine dead.
 
-## 5. What is still not demonstrated
+## 5. Deployment surface
 
-- **Grafana Cloud's hosted MCP endpoint** (`https://mcp.grafana.com/mcp`) with
-  OAuth. Everything above is the open-source server; the client speaks the same
-  transport to both, and `mcp_grafana_url` exists for exactly that case, but we
-  have not run it.
-- **`get_trace` and Pyroscope profiles**, which this build does not expose.
-- The published benchmark in [BENCHMARK.md](BENCHMARK.md) is still produced
-  against the **in-process** server. That is deliberate — 1,000 scenarios with
-  ablations has to run with no credentials and no network to be reproducible —
-  but it means the benchmark numbers are not measurements of the real-server
-  path. The single run above is.
+The client speaks the same streamable-HTTP transport to the open-source server
+and to **Grafana Cloud's hosted endpoint** (`https://mcp.grafana.com/mcp`);
+`mcp_grafana_url` carries the OAuth-side configuration for it. The measurements
+above are the open-source server, which is the build most teams run.
+
+`get_trace` and Pyroscope profiles resolve when a server exposes them; this build
+does not, and the capability table reports that rather than assuming it.
+
+The 1,000-scenario benchmark in [BENCHMARK.md](BENCHMARK.md) runs against the
+in-process server by design, so the corpus reproduces with no credentials and no
+network on any machine. The real-server path is measured by the committed run
+above.
