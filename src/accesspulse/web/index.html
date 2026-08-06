@@ -197,6 +197,28 @@
       </section>
     </div>
 
+    <section class="card stage-ask" aria-labelledby="h-ask">
+      <h2 id="h-ask"><span class="stage-tag">Interrogate</span> Ask the agent</h2>
+      <p class="card-note">Question the diagnosis. Every answer cites the evidence it rests
+      on and the Grafana MCP tool that produced it. With the Gemini reasoning plane
+      configured, a question the retrieved evidence cannot settle sends the agent back to
+      Grafana MCP for more, on the same audited path as the investigation. This is a read
+      path: it cannot change scope, policy, actions or verification.</p>
+
+      <form id="ask-form" class="ask-form">
+        <label for="ask-input">Your question</label>
+        <div class="field-row">
+          <input type="text" id="ask-input" name="question" maxlength="500" autocomplete="off"
+                 placeholder="Why did you rule out a fixed clock offset?">
+          <button type="submit" class="btn btn-primary" id="btn-ask">Ask</button>
+        </div>
+      </form>
+
+      <div class="field-row ask-suggestions" id="ask-suggestions"></div>
+      <p id="ask-status" class="hint" role="status" aria-live="polite"></p>
+      <div id="ask-log" class="ask-log"></div>
+    </section>
+
     <section class="card" aria-labelledby="h-comms">
       <h2 id="h-comms">Communications</h2>
       <div id="comms-list"></div>

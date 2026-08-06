@@ -86,15 +86,29 @@ def find_chrome(explicit: str | None) -> str:
     raise SystemExit("Chrome not found. Pass --chrome with the path to the binary.")
 
 
-def post(base: str, path: str, payload: dict | None = None) -> None:
+# Asked before the capture so the incident workspace is photographed with the
+# Ask panel populated rather than empty. Two questions, because the interesting
+# thing about the panel is the log of them.
+ASK_QUESTIONS = [
+    "Why did you rule out a fixed clock offset?",
+    "What changed just before this started?",
+]
+
+
+def post(base: str, path: str, payload: dict | None = None) -> bytes:
     """Drive the product's own API, so the captured state is a real run."""
     data = json.dumps(payload).encode() if payload is not None else b""
     req = urllib.request.Request(
         f"{base}{path}", data=data, method="POST",
         headers={"content-type": "application/json"},
     )
-    with urllib.request.urlopen(req, timeout=120) as r:
-        r.read()
+    with urllib.request.urlopen(req, timeout=180) as r:
+        return r.read()
+
+
+def get(base: str, path: str):
+    with urllib.request.urlopen(f"{base}{path}", timeout=60) as r:
+        return json.loads(r.read())
 
 
 def wait_for_server(base: str, timeout: float = 30.0) -> None:
@@ -212,7 +226,8 @@ def _record_console(chrome: Chrome, raw: dict) -> None:
         )
 
 
-async def capture(base: str, chrome: Chrome, settle: float) -> list[dict]:
+async def capture(base: str, chrome: Chrome, settle: float,
+                  ask: bool = True) -> list[dict]:
     ws_url = chrome.launch()
     shots: list[dict] = []
     async with websockets.connect(ws_url, max_size=200 * 1024 * 1024) as ws:
@@ -245,6 +260,21 @@ async def capture(base: str, chrome: Chrome, settle: float) -> list[dict]:
                 raise SystemExit(f"tab {tab_id} is not in the page - has it been renamed?")
             await asyncio.sleep(settle)
 
+            # The Ask panel's log is client-side, so the questions have to be
+            # asked in this browser for the screenshot to show it populated.
+            if tab_id == "tab-incident" and ask:
+                for index in range(min(len(ASK_QUESTIONS), 2)):
+                    await _send(
+                        ws, chrome, "Runtime.evaluate",
+                        {"expression": (
+                            "(() => { const s = document.getElementById('ask-suggestions');"
+                            f" if (!s || !s.children[{index}]) return 'skip';"
+                            f" s.children[{index}].click(); return 'ok'; }})()"),
+                         "returnByValue": True},
+                        sid,
+                    )
+                    await asyncio.sleep(settle + 1.0)
+
             # captureBeyondViewport photographs the whole scrollable panel, which
             # is the point: the incident workspace is the argument, and cropping
             # it to a viewport would hide the audit trail at the bottom.
@@ -274,6 +304,8 @@ def main() -> int:
     ap.add_argument("--fault", default="cap.progressive_drift")
     ap.add_argument("--no-run", action="store_true",
                     help="capture whatever state the server is already in")
+    ap.add_argument("--no-ask", action="store_true",
+                    help="do not populate the Ask panel before capturing the incident view")
     args = ap.parse_args()
 
     base = args.base.rstrip("/")
@@ -286,10 +318,11 @@ def main() -> int:
              {"fault_id": args.fault, "ticks": 6, "seconds_per_tick": 20})
         post(base, "/api/incident/run?auto_approve=true")
 
+
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     chrome = Chrome(find_chrome(args.chrome), args.width, args.height)
     try:
-        shots = asyncio.run(capture(base, chrome, args.settle))
+        shots = asyncio.run(capture(base, chrome, args.settle, ask=not args.no_ask))
     finally:
         chrome.close()
 

@@ -197,6 +197,31 @@ h3 { font-size: 0.92rem; margin: 1rem 0 0.35rem; color: var(--ink-2); }
 .stage-policy .stage-tag { color: var(--policy); }
 .stage-verify { border-left: 5px solid var(--verify); }
 .stage-verify .stage-tag { color: var(--verify); }
+/* Interrogating a diagnosis is a hypothesis-stage activity, so it reuses that
+   stage's colour rather than introducing a text/background pair the contrast
+   audit does not already check. */
+.stage-ask { border-left: 5px solid var(--hypothesis); }
+.stage-ask .stage-tag { color: var(--hypothesis); }
+
+/* --- ask the agent ------------------------------------------------------ */
+.ask-form label {
+  display: block; font-size: 0.85rem; color: var(--ink-2); margin-bottom: 0.35rem;
+}
+.ask-form input[type="text"] { flex: 1 1 22rem; }
+.ask-suggestions { margin: 0.6rem 0 0.25rem; }
+.btn-small { font-size: 0.78rem; padding: 0.3rem 0.55rem; }
+.ask-log { margin-top: 0.5rem; }
+.ask-entry {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0.75rem 0.85rem;
+  margin-top: 0.75rem;
+  background: var(--surface-2);
+}
+.ask-q { font-weight: 600; margin: 0 0 0.4rem; }
+.ask-a { margin: 0 0 0.5rem; white-space: pre-wrap; max-width: 78ch; }
+.ask-meta { font-size: 0.8rem; color: var(--ink-2); margin: 0; }
+.ask-evidence { margin-top: 0.6rem; }
 
 /* --- stat tiles --------------------------------------------------------- */
 .stat-row {

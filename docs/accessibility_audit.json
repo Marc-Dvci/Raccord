@@ -136,7 +136,7 @@
       "check": "3.3.2 labels or instructions",
       "detail": "every form control has a <label for>",
       "ok": true,
-      "measured": "1 labelled controls"
+      "measured": "2 labelled controls"
     },
     {
       "check": "1.1.1 non-text content",
@@ -148,7 +148,7 @@
       "check": "4.1.3 status messages",
       "detail": "live regions announce asynchronous updates",
       "ok": true,
-      "measured": "5 live regions"
+      "measured": "6 live regions"
     },
     {
       "check": "1.4.3 contrast",

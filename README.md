@@ -43,6 +43,27 @@ recovery**.
 | **Closed-loop incident response** | Detect → scope → gather evidence through Grafana MCP → diagnose → evaluate policy → obtain a signed approval → execute one allow-listed action → re-measure → communicate → review. Twelve states, no skipping. |
 | **Reliability intelligence** | Post-incident measurement of what was missed, which change caused it, how much error budget it cost, and which improvements to propose to a human. |
 
+### One control plane, live and on demand
+
+The same loop runs a global premiere and a back catalogue. Every one of the 31 SLOs is defined
+per tier — `tier0_global_live`, `tier1_regional_live`, `tier2_vod_premium`, `tier3_catalog` —
+with its own objective and its own error budget (1, 3, 10 and 30 minutes respectively), and the
+policy engine reads **tier and liveness independently**. Rule P-010 demands a signed approval
+from the technical director for anything touching a live tier-0 chain. Rule P-020 lets a narrow,
+reversible, single-region recovery run **automatically** when the content is not live.
+
+That second path is where the volume is. You can put a human in the loop for one premiere. You
+cannot put a human in the loop for a fifty-thousand-title catalogue — which is exactly where
+accessibility rot accumulates: the described-audio track that has been silent for eight months,
+on a film nobody watches with description except the people who cannot watch it without.
+
+**This is now a legal obligation, not a courtesy.** The European Accessibility Act has been
+applicable to audiovisual media services since June 2025; the FCC enforces caption-quality
+rules; Ofcom sets access-service quotas. Broadcasters demonstrate compliance today with periodic
+sampling and a spreadsheet. AccessPulse turns it into a continuously measured objective with a
+hash-chained evidence trail per incident — the same artifact that satisfies an auditor also
+pages an engineer.
+
 ---
 
 ## Run it
@@ -349,6 +370,11 @@ difficulty stratification and the ablation tables.
 - **Incident workspace** — evidence, ranked diagnosis, change correlation, policy, approval,
   verification, communications and the hash-chained audit trail, each visually and structurally
   separated so that *evidence*, *hypothesis*, *policy* and *verified result* are never confused
+- **Ask the agent** — interrogate the diagnosis in place. *Why did you rule out a fixed clock
+  offset? What changed just before this started? How do you know it is actually fixed?* Every
+  answer cites the evidence it rests on and the Grafana MCP tool that produced it, and with the
+  Gemini plane configured a question the retrieved evidence cannot settle sends the agent back
+  to Grafana MCP for more — the same audited path, visible as new calls in the Agent & MCP view
 - **Evidence replay** — the exact affected interval: what was spoken against what was captioned
 - **Agent & MCP observability** — every tool call, latency, capability resolution and agent step
 - **Benchmark laboratory** — the measured results, in the product

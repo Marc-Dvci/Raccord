@@ -672,9 +672,94 @@ function wire() {
     $(sel).addEventListener('click', (ev) => step(path, ev.target, message));
   }
 
+  $('#ask-form').addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    askAgent($('#ask-input').value);
+  });
+  renderAskSuggestions();
+
   $('#tab-benchmark').addEventListener('click', loadBenchmark);
   $('#tab-observability').addEventListener('click', refreshObservability);
   $('#tab-cockpit').addEventListener('click', refreshLogs);
+}
+
+/* ------------------------------------------------------------- ask the agent
+
+   An operator reading a ranked diagnosis wants to interrogate it rather than
+   accept it. Answers are appended newest-first and each one carries the
+   evidence it rests on, so a claim can be followed back to the Grafana query
+   that produced it. */
+
+const ASK_SUGGESTIONS = [
+  'Why did you rule out a fixed clock offset?',
+  'What changed just before this started?',
+  'How do you know it is actually fixed?',
+  'What is still uncertain?',
+];
+
+function renderAskSuggestions() {
+  $('#ask-suggestions').replaceChildren(...ASK_SUGGESTIONS.map((q) => {
+    const btn = el('button', { type: 'button', class: 'btn btn-quiet btn-small' }, q);
+    btn.addEventListener('click', () => {
+      $('#ask-input').value = q;
+      askAgent(q);
+    });
+    return btn;
+  }));
+}
+
+async function askAgent(question) {
+  const q = (question || '').trim();
+  const status = $('#ask-status');
+  if (!q) {
+    status.textContent = 'Type a question about this incident first.';
+    return;
+  }
+  if (!state.incidentId) {
+    status.textContent = 'No incident is open. Run the loop, or inject a fault, first.';
+    return;
+  }
+  const btn = $('#btn-ask');
+  busy(btn, true);
+  status.textContent = 'Asking the agent…';
+  try {
+    const res = await api(`/api/incident/${state.incidentId}/ask`, {
+      method: 'POST',
+      body: JSON.stringify({ question: q }),
+    });
+
+    // The plane that answered is stated, never implied. An operator reading an
+    // answer during an incident needs to know whether a model wrote it.
+    const planeLabel = res.plane === 'gemini'
+      ? `Gemini · ${res.model || 'vertex ai'}`
+      : 'offline reasoning core';
+    const meta = [planeLabel];
+    if (res.mcp_calls_made > 0) {
+      meta.push(`${res.mcp_calls_made} new Grafana MCP call${res.mcp_calls_made === 1 ? '' : 's'}`);
+    }
+    if (res.intent) meta.push(res.intent.replace(/_/g, ' '));
+
+    const entry = el('article', { class: 'ask-entry' },
+      el('p', { class: 'ask-q' }, res.question),
+      el('p', { class: 'ask-a' }, res.answer),
+      el('p', { class: 'ask-meta' },
+        statusSpan(res.plane === 'gemini' ? 'ok' : 'idle', planeLabel),
+        ` · ${meta.slice(1).join(' · ') || 'answered from the incident record'}`),
+      res.evidence.length
+        ? el('ul', { class: 'evidence ask-evidence' }, ...res.evidence.map((e) => el('li', {},
+            el('span', { class: 'tool' }, e.tool),
+            el('span', {}, e.summary))))
+        : null);
+
+    $('#ask-log').prepend(entry);
+    status.textContent = `Answered by ${planeLabel}.`;
+    $('#ask-input').value = '';
+    if (res.mcp_calls_made > 0) await refreshObservability();
+  } catch (err) {
+    status.textContent = err.message;
+  } finally {
+    busy(btn, false);
+  }
 }
 
 /* The incident the server already has open, if any.

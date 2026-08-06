@@ -23,6 +23,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from . import media
+from .agents import ask as ask_agent
 from .certification import ReleaseGate
 from .certification import summarise as summarise_cert
 from .config import get_settings
@@ -421,6 +422,32 @@ async def incidents() -> list[dict]:
 async def incident(incident_id: str) -> dict:
     rt = get_runtime()
     return _incident_payload(rt, _incident(rt, incident_id))
+
+
+@app.post("/api/incident/{incident_id}/ask")
+async def ask_incident(
+    incident_id: str,
+    body: dict = Body(..., examples=[{"question": "why did you rule out a clock offset?"}]),
+) -> dict:
+    """Answer an operator's question about an open incident.
+
+    Read-only by construction: the answer is composed from the typed incident
+    record, and when the Gemini plane is configured it may retrieve more through
+    the Grafana MCP server — the same audited path the investigation used. There
+    is no route from this endpoint to the executor.
+    """
+    rt = get_runtime()
+    inc = _incident(rt, incident_id)
+    question = str(body.get("question", "")).strip()
+    if not question:
+        raise HTTPException(422, "a question is required")
+    if len(question) > 500:
+        raise HTTPException(422, "question is too long (500 characters maximum)")
+    result = await ask_agent.answer(
+        inc, question, mcp=rt.mcp,
+        causal=rt.coordinator.causal.get(incident_id, []),
+    )
+    return result.as_dict()
 
 
 @app.get("/api/incident/{incident_id}/replay")

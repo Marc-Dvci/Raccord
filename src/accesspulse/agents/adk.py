@@ -53,6 +53,34 @@ Return JSON with keys: narrative, supporting, contradicting, unknowns,
 recommended_next_evidence, confidence_statement.
 """.strip()
 
+ASK_INSTRUCTION = """
+You are the reasoning plane of AccessPulse, answering an operator who is looking
+at a live incident and interrogating its diagnosis. You are given the typed
+incident record and one question.
+
+You hold the Grafana MCP toolset. If the record already answers the question,
+answer from it. If it does not, **use the tools** to retrieve what is missing —
+that is the point of you having them, and every call is audited on the same
+Grafana timeline as the investigation itself.
+
+Rules:
+1. Answer the question that was asked, in two or three sentences. An operator is
+   reading this during an incident, not afterwards.
+2. Ground every claim in evidence. Cite the evidence ids you used, and say which
+   Grafana tool produced a fact you fetched yourself.
+3. If the evidence does not settle the question, say so plainly and name the one
+   query that would.
+4. Never assert a cause the evidence does not support, and never contradict the
+   deterministic diagnosis without saying that is what you are doing.
+5. Never infer anything about an individual viewer's disability or assistive
+   technology. Talk about features and sessions, never about people's bodies.
+6. You are read-only. You cannot change scope, policy, actions or verification.
+   If asked to do any of those, say that it requires the approval path.
+
+Return JSON with keys: answer (string), evidence_ids (array of strings),
+fetched (array of strings naming any Grafana tool you called).
+""".strip()
+
 COMMUNICATION_INSTRUCTION = """
 You write the audience-specific communications for an accessibility incident.
 You are given the approved incident record only. You may not invent facts, add
@@ -258,6 +286,54 @@ async def synthesise(incident: Incident, quality_notes: list[str],
         tokens_in=tokens_in,
         tokens_out=tokens_out,
     )
+
+
+async def ask(incident: Incident, question: str) -> dict:
+    """Answer one operator question about an incident, with MCP tools in hand.
+
+    Unlike `synthesise`, which runs once on a settled record, this is the path an
+    operator drives interactively — so the agent is expected to reach for the
+    Grafana MCP toolset when the retrieved evidence does not already answer what
+    was asked.
+    """
+    from google.adk.agents import LlmAgent  # type: ignore
+    from google.adk.runners import InMemoryRunner  # type: ignore
+    from google.genai import types  # type: ignore
+
+    settings = get_settings()
+    agent = LlmAgent(
+        name="accesspulse_operator_qa",
+        model=settings.gemini_model,
+        instruction=ASK_INSTRUCTION,
+        description="Answers operator questions about a live accessibility incident.",
+        tools=[build_mcp_toolset()],
+    )
+    runner = InMemoryRunner(agent=agent, app_name="accesspulse")
+    session = await runner.session_service.create_session(
+        app_name="accesspulse", user_id="accesspulse-operator"
+    )
+    payload = {
+        "question": question,
+        "incident": incident_payload(incident, [], []),
+    }
+    message = types.Content(
+        role="user", parts=[types.Part(text=json.dumps(payload, indent=2))]
+    )
+
+    text = ""
+    async for event in runner.run_async(
+        user_id="accesspulse-operator", session_id=session.id, new_message=message
+    ):
+        if event.is_final_response() and event.content and event.content.parts:
+            text = "".join(p.text or "" for p in event.content.parts)
+
+    data = _loads(text)
+    return {
+        "answer": data.get("answer") or text[:2000] or "No answer was returned.",
+        "evidence_ids": list(data.get("evidence_ids", [])),
+        "fetched": list(data.get("fetched", [])),
+        "model": settings.gemini_model,
+    }
 
 
 def _loads(text: str) -> dict:

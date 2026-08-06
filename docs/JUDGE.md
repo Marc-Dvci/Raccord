@@ -70,6 +70,12 @@ Seven views. The two worth your time:
 - **Agent & MCP observability** — every tool call, its latency, capability resolution, every
   agent step.
 
+Try **Ask the agent**, in the incident workspace. *Why did you rule out a fixed clock offset?*
+gets you the posterior it was actually ranked at and the evidence that argues against it, cited
+back to the Grafana MCP tool that produced each fact. Answers state which plane wrote them; with
+`AP_REASONING_MODE=gemini` a question the retrieved evidence cannot settle sends the agent back
+through MCP for more, and the new calls appear in the Agent & MCP view.
+
 The UI is keyboard-operable throughout; try it with Tab and arrow keys. It is dependency-free —
 no framework, no CDN, nothing loaded from a third-party host.
 
