@@ -10,6 +10,7 @@ from typing import Any
 
 from ..config import get_settings
 from ..telemetry import TelemetryPlane
+from .adapters import AdapterContext, AdapterError, adapter_for
 
 
 class MCPUnavailable(RuntimeError):
@@ -50,9 +51,12 @@ CAPABILITIES: tuple[Capability, ...] = (
     # by lookup key. Same semantics, same arguments, so both are candidates.
     Capability("get_datasource",
                ("get_datasource", "get_datasource_by_uid", "get_datasource_by_name"), False),
-    Capability("list_alert_rules", ("list_alert_rules",), True,
+    # Recent servers fold rule listing and retrieval into one dispatch tool.
+    # Its arguments and responses differ from the dedicated tools, which is why
+    # a name alone is not enough - see adapters.py.
+    Capability("list_alert_rules", ("list_alert_rules", "alerting_manage_rules"), True,
                "read the firing accessibility alert"),
-    Capability("get_alert_rule", ("get_alert_rule_by_uid",), True,
+    Capability("get_alert_rule", ("get_alert_rule_by_uid", "alerting_manage_rules"), True,
                "read the rule definition and labels behind the alert"),
     Capability("query_prometheus", ("query_prometheus",), True,
                "query SLI series: drift, availability, sessions, budget burn"),
@@ -61,7 +65,13 @@ CAPABILITIES: tuple[Capability, ...] = (
     Capability("query_loki_logs", ("query_loki_logs",), True,
                "read encoder, clock, packager and player logs"),
     Capability("query_loki_stats", ("query_loki_stats",), False),
-    Capability("query_tempo_traces", ("query_tempo_traces", "find_traces", "search_traces"),
+    # `grafana_api_request` is last on purpose: a native trace tool is preferred
+    # wherever one exists. Current open-source builds of the official server
+    # expose none, and the generic API tool reaches Tempo through Grafana's
+    # datasource proxy - still over MCP, still audited (see adapters.py).
+    Capability("query_tempo_traces",
+               ("query_tempo_traces", "find_traces", "search_traces",
+                "grafana_api_request"),
                True, "follow the media path trace through the affected pool"),
     Capability("get_trace", ("get_trace_by_id", "get_trace"), False),
     Capability("fetch_pyroscope_profile", ("fetch_pyroscope_profile",), False,
@@ -99,15 +109,19 @@ def _field(obj: Any, *names: str) -> Any:
 
 
 class GrafanaMCPClient(ABC):
-    """Common behaviour: capability resolution, telemetry, guard rails."""
+    """Common behaviour: capability resolution, translation, telemetry, guard rails."""
 
     transport: str = "abstract"
+    # The in-process server implements the canonical argument and response
+    # shapes, so it needs no translation. Real servers do.
+    adapt: bool = False
 
     def __init__(self, telemetry: TelemetryPlane | None = None) -> None:
         self.telemetry = telemetry or TelemetryPlane()
         self._tools: dict[str, ToolInfo] = {}
         self._resolved: dict[str, str] = {}
         self.call_log: list[dict[str, Any]] = []
+        self.context = AdapterContext()
 
     # -- lifecycle ---------------------------------------------------------
     async def connect(self) -> None:
@@ -129,6 +143,40 @@ class GrafanaMCPClient(ABC):
                 + ", ".join(missing)
                 + f" (server advertises {len(self._tools)} tools)"
             )
+        if self.adapt:
+            await self._discover_datasources()
+
+    async def _discover_datasources(self) -> None:
+        """Learn this Grafana's datasource UIDs; adapters need them per query.
+
+        Discovered rather than assumed: a Grafana someone else provisioned will
+        not have named its datasources the way ours does.
+        """
+        self.context.grafana_url = get_settings().grafana_url
+        found: dict[str, str] = {}
+        try:
+            listed = await self.call("list_datasources")
+        except (MCPCallError, MCPUnavailable):
+            self.context.datasources = {}
+            return
+        if isinstance(listed, str):
+            import json as _json
+
+            try:
+                listed = _json.loads(listed)
+            except _json.JSONDecodeError:
+                listed = []
+        # The stub answers with a bare list; the official server wraps it.
+        if isinstance(listed, dict):
+            listed = listed.get("datasources") or listed.get("result") or []
+        for ds in listed if isinstance(listed, list) else []:
+            if not isinstance(ds, dict):
+                continue
+            kind, uid = ds.get("type"), ds.get("uid")
+            # First of each type wins, matching what an operator would pick.
+            if kind and uid and kind not in found:
+                found[kind] = uid
+        self.context.datasources = found
 
     async def aclose(self) -> None:
         return None
@@ -157,16 +205,33 @@ class GrafanaMCPClient(ABC):
 
     async def call(self, capability: str, **arguments: Any) -> Any:
         tool = self.tool_for(capability)
+        # A server whose tool already speaks the canonical shape gets no
+        # adapter and is called unchanged; the stub is always in that case.
+        adapter = adapter_for(capability, tool) if self.adapt else None
+        try:
+            sent = adapter.request(dict(arguments), self.context) if adapter else arguments
+        except AdapterError as exc:
+            raise MCPUnavailable(
+                f"capability '{capability}' cannot be expressed against "
+                f"'{tool}' on this server: {exc}"
+            ) from exc
+
         started = time.perf_counter()
         ok = True
         try:
-            result = await self._invoke(tool, arguments)
+            result = await self._invoke(tool, sent)
         except Exception as exc:  # noqa: BLE001 - recorded then re-raised
             ok = False
-            self._record(tool, arguments, started, ok, 0)
+            self._record(tool, sent, started, ok, 0)
             raise MCPCallError(f"{tool} failed: {exc}") from exc
         size = len(str(result))
-        self._record(tool, arguments, started, ok, size)
+        self._record(tool, sent, started, ok, size)
+
+        if adapter:
+            try:
+                return adapter.response(result, dict(arguments))
+            except AdapterError as exc:
+                raise MCPCallError(f"{tool} returned an unusable shape: {exc}") from exc
         return result
 
     def _record(self, tool: str, arguments: dict, started: float, ok: bool,
@@ -191,6 +256,8 @@ class GrafanaMCPClient(ABC):
 
 class RemoteGrafanaMCP(GrafanaMCPClient):
     """Talks to the official grafana/mcp-grafana server via the MCP Python SDK."""
+
+    adapt = True
 
     def __init__(self, transport: str, telemetry: TelemetryPlane | None = None) -> None:
         super().__init__(telemetry)
@@ -228,7 +295,9 @@ class RemoteGrafanaMCP(GrafanaMCPClient):
         else:
             import mcp.client.streamable_http as sh
 
-            headers = {"X-Grafana-URL": settings.grafana_url}
+            headers = {}
+            if settings.mcp_grafana_url:
+                headers["X-Grafana-URL"] = settings.mcp_grafana_url
             if settings.grafana_service_account_token:
                 headers["Authorization"] = (
                     f"Bearer {settings.grafana_service_account_token}"

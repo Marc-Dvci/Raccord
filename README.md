@@ -66,39 +66,57 @@ our word for it.
 
 ```bash
 docker compose up -d                    # Grafana, Prometheus, Loki, Tempo, Pyroscope
-accesspulse serve                       # AccessPulse exposes /metrics; Prometheus scrapes it
+./tools/grafana_token.sh                # mints a service-account token into .env
+docker compose --profile mcp up -d mcp-grafana    # the official grafana/mcp-grafana server
+
+# .env
+AP_MCP_TRANSPORT=http
+AP_MCP_HTTP_URL=http://localhost:8000/mcp
+AP_EXPORT_TELEMETRY=true                # push probes, logs, spans and annotations into the stack
+
+pip install -e ".[cloud]"               # the MCP SDK
+accesspulse serve                       # Prometheus scrapes /metrics; the agent reads via MCP
 open http://localhost:3000              # admin / accesspulse — five provisioned dashboards
 ```
 
-Then point the agent at the **official Grafana MCP server** instead of the in-process one:
+Inject a fault and run the loop; every fact now comes from a real Grafana:
 
 ```bash
-# .env
-AP_MCP_TRANSPORT=stdio
-AP_GRAFANA_URL=http://localhost:3000
-AP_GRAFANA_SERVICE_ACCOUNT_TOKEN=<token from Grafana → Administration → Service accounts>
+curl -X POST localhost:8080/api/inject -H 'content-type: application/json' \
+     -d '{"fault_id":"cap.progressive_drift","ticks":10,"seconds_per_tick":20}'
+curl -X POST 'localhost:8080/api/incident/run?auto_approve=true'
 ```
 
 No agent code changes. The client discovers the server's real tool list, resolves the
 capabilities it needs against it, and refuses to start the investigation if a required
 capability is missing.
 
-We ran exactly that against the official server and wrote down what happened, including the
-part that does not work:
+We ran exactly that against the official server and committed what happened.
 
 ```bash
 python tools/mcp_conformance.py --transport http --out docs/mcp_conformance.json
-# 65 tools advertised · 14/20 capabilities resolved · 3 required ones unavailable
+# 65 tools advertised · 18/20 capabilities resolved · 12/12 required
 ```
 
-The official `mcp/grafana` server has renamed, consolidated and removed tools since this
-capability table was written — most notably, current builds expose **no Tempo tool at all**, so
-the trace step of the mandatory chain has no route and an investigation correctly refuses to
-leave `SCOPED`. The refusal is the safety property working, and the committed measurement is
-[`docs/mcp_conformance.json`](docs/mcp_conformance.json). The published benchmark and the hero
-run were produced against the **in-process** MCP server, which implements the surface the
-capability table targets. **[docs/MCP_CONFORMANCE.md](docs/MCP_CONFORMANCE.md)** states what has
-and has not been demonstrated against the official server, and what would close the gap.
+**The whole closed loop runs against the official `mcp/grafana` server** — 16 MCP calls, all
+successful, ending `REVIEWED` with 9/9 assertions and scope 1.00/1.00, against a real Grafana
+reading real Prometheus, Loki and Tempo. The alert that opened it was a real Grafana alert rule
+in `firing` state. Artifact: [`docs/real_mcp_run.json`](docs/real_mcp_run.json).
+
+Getting there needed more than name resolution, and that is the interesting part. The official
+server has **renamed, consolidated and removed** tools since this capability table was written:
+alert listing and retrieval are now one action-dispatch tool, and current open-source builds
+expose **no Tempo tool at all** — traces reach Grafana's Tempo datasource proxy through the
+server's generic `grafana_api_request`, still over MCP, still audited.
+`src/accesspulse/grafana_mcp/adapters.py` holds one adapter per deviating tool: argument
+translation, discovered datasource UIDs, time formats Grafana will accept, and response
+normalisation. 19 tests pin those shapes so the next change names itself instead of killing an
+investigation halfway through.
+
+**[docs/MCP_CONFORMANCE.md](docs/MCP_CONFORMANCE.md)** has the measurement, the call chain, and
+what is still *not* demonstrated — including that the published benchmark below is produced
+against the in-process server, because 1,000 scenarios have to run with no credentials to be
+reproducible.
 
 ### With Gemini
 

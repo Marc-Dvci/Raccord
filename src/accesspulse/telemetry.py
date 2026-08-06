@@ -217,6 +217,11 @@ class LogStore:
             out.append(entry)
         return out[-limit:]
 
+    def since(self, ts: datetime) -> list[LogLine]:
+        """Lines appended after `ts`, for incremental export to Loki."""
+        with self._lock:
+            return [e for e in self._lines if e.ts > ts]
+
     def label_names(self) -> list[str]:
         with self._lock:
             return sorted({k for e in self._lines for k in e.labels})
@@ -267,6 +272,11 @@ class TraceStore:
 
     def new_trace(self) -> str:
         return uuid.uuid4().hex
+
+    def since(self, ts: datetime) -> list[Span]:
+        """Spans started after `ts`, for incremental export to Tempo."""
+        with self._lock:
+            return [s for s in self._spans if s.start > ts]
 
     def record(
         self, name: str, service: str, duration_ms: float, trace_id: str | None = None,
@@ -540,6 +550,8 @@ class RemoteExporters:
         s = get_settings()
         self.loki_url = s.loki_url.rstrip("/")
         self.otlp_endpoint = s.otlp_endpoint.rstrip("/")
+        self.grafana_url = s.grafana_url.rstrip("/")
+        self.grafana_token = s.grafana_service_account_token
         self.enabled = False
         self.last_error: str | None = None
 
@@ -552,10 +564,41 @@ class RemoteExporters:
             self.enabled = False
         return self.enabled
 
-    def push_logs(self, lines: Iterable[LogLine]) -> bool:
+    def push_annotations(self, annotations: Iterable[Annotation],
+                         offset: timedelta = timedelta(0)) -> int:
+        """Write change and recovery annotations onto the real Grafana timeline.
+
+        This is AccessPulse *emitting* its own telemetry, not the agent reading
+        evidence: the agent still learns nothing except through the MCP server
+        (ADR 0002). Without it, `find_annotations` over a real Grafana returns
+        nothing and change correlation has no candidates to rank.
+        """
+        if not self.grafana_token:
+            return 0
+        headers = {"Authorization": f"Bearer {self.grafana_token}"}
+        written = 0
+        for a in annotations:
+            payload: dict[str, Any] = {
+                "text": a.text,
+                "tags": list(a.tags),
+                "time": int((a.time + offset).timestamp() * 1000),
+            }
+            if a.time_end:
+                payload["timeEnd"] = int((a.time_end + offset).timestamp() * 1000)
+            try:
+                r = httpx.post(f"{self.grafana_url}/api/annotations", json=payload,
+                               headers=headers, timeout=3.0)
+                written += 1 if r.status_code < 300 else 0
+            except Exception as exc:  # noqa: BLE001
+                self.last_error = str(exc)
+        return written
+
+    def push_logs(self, lines: Iterable[LogLine],
+                  offset: timedelta = timedelta(0)) -> bool:
         streams: dict[tuple, list[list[str]]] = defaultdict(list)
         for entry in lines:
-            streams[tuple(sorted(entry.labels.items()))].append(list(entry.to_loki()))
+            shifted = LogLine(entry.ts + offset, entry.labels, entry.line)
+            streams[tuple(sorted(entry.labels.items()))].append(list(shifted.to_loki()))
         if not streams:
             return True
         payload = {
@@ -570,18 +613,20 @@ class RemoteExporters:
             self.last_error = str(exc)
             return False
 
-    def push_spans(self, spans: Iterable[Span]) -> bool:
+    def push_spans(self, spans: Iterable[Span],
+                   offset: timedelta = timedelta(0)) -> bool:
         resource_spans = defaultdict(list)
         for s in spans:
+            start = s.start + offset
             resource_spans[s.service].append({
                 "traceId": s.trace_id,
                 "spanId": s.span_id,
                 "parentSpanId": s.parent_id or "",
                 "name": s.name,
                 "kind": 1,
-                "startTimeUnixNano": str(int(s.start.timestamp() * 1e9)),
+                "startTimeUnixNano": str(int(start.timestamp() * 1e9)),
                 "endTimeUnixNano": str(
-                    int((s.start + timedelta(milliseconds=s.duration_ms)).timestamp() * 1e9)
+                    int((start + timedelta(milliseconds=s.duration_ms)).timestamp() * 1e9)
                 ),
                 "attributes": [
                     {"key": k, "value": {"stringValue": str(v)}}
@@ -625,6 +670,42 @@ class TelemetryPlane:
         self.exporters = RemoteExporters()
         self.mcp_calls: list[dict[str, Any]] = []
         self.agent_steps: list[dict[str, Any]] = []
+        # A point on the simulated event clock; unset until the first export.
+        self._export_cursor: datetime | None = None
+        self._annotations_exported = 0
+
+    def export(self, offset: timedelta = timedelta(0)) -> dict[str, int]:
+        """Push telemetry produced since the last call to the real Grafana stack.
+
+        `offset` maps the simulated event clock onto the real one. The programme
+        advances faster than wall time, so a log line or span carries a simulated
+        timestamp that can be minutes ahead of now - while Prometheus stamps the
+        same findings at scrape time. Shifting on export keeps metric, log and
+        trace evidence for one incident inside one window, which is the whole
+        point of correlating them.
+
+        No-op and never fatal when the stack is absent: the offline demo and the
+        1,000-scenario benchmark must not depend on a Grafana being there.
+        """
+        if not self.exporters.enabled:
+            return {"logs": 0, "spans": 0, "annotations": 0}
+        # The cursor is a point on the *simulated* clock, not the real one, so it
+        # starts unset rather than at `now`: the two are unrelated until the
+        # first tick establishes where the event's timeline actually is.
+        cursor = self._export_cursor
+        lines = self.logs.since(cursor) if cursor else self.logs.query(limit=100000)
+        spans = self.traces.since(cursor) if cursor else self.traces.search(limit=100000)
+        pending = self.grafana.annotations[self._annotations_exported:]
+
+        self.exporters.push_logs(lines, offset)
+        self.exporters.push_spans(spans, offset)
+        written = self.exporters.push_annotations(pending, offset)
+
+        self._annotations_exported = len(self.grafana.annotations)
+        seen = [e.ts for e in lines] + [s.start for s in spans]
+        if seen:
+            self._export_cursor = max(seen)
+        return {"logs": len(lines), "spans": len(spans), "annotations": written}
 
     def record_mcp_call(self, tool: str, args: dict, duration_ms: float,
                         ok: bool, result_size: int) -> None:
@@ -666,3 +747,5 @@ class TelemetryPlane:
         self.grafana.clear()
         self.mcp_calls.clear()
         self.agent_steps.clear()
+        self._export_cursor = None
+        self._annotations_exported = 0

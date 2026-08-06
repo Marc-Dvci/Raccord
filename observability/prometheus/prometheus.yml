@@ -10,7 +10,12 @@ scrape_configs:
   - job_name: accesspulse
     metrics_path: /metrics
     static_configs:
-      - targets: ["host.docker.internal:8080"]
+      # 8080 is the documented default; 8099 is the fallback the docs suggest
+      # when it is taken - which on Windows can happen silently, because one
+      # process may bind 127.0.0.1:8080 while another owns 0.0.0.0:8080.
+      # Listing both means the scrape finds the app either way; the idle port
+      # simply shows as a down target.
+      - targets: ["host.docker.internal:8080", "host.docker.internal:8099"]
         labels:
           service: accesspulse
 

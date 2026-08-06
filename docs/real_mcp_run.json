@@ -1,0 +1,228 @@
+{
+  "generated": "2026-08-06T18:21:35+00:00",
+  "what_this_is": "One complete AccessPulse closed loop executed against the official grafana/mcp-grafana server over streamable-HTTP, reading a real Grafana 11.5.1 backed by real Prometheus, Loki and Tempo. Not the in-process server.",
+  "server": {
+    "image": "mcp/grafana:latest",
+    "transport": "streamable-http",
+    "endpoint": "http://localhost:8000/mcp",
+    "grafana": "11.5.1",
+    "tools_advertised": 65
+  },
+  "outcome": {
+    "detected": true,
+    "state": "REVIEWED",
+    "recovered": true,
+    "rolled_back": false,
+    "action_taken": "select_synchronized_standby",
+    "scope_precision": 1.0,
+    "scope_recall": 1.0,
+    "unsafe_action": false,
+    "affected_sessions": 8053,
+    "protected_sessions": 140295,
+    "audit_chain_valid": true,
+    "error": null
+  },
+  "assertions": {
+    "total": 9,
+    "passing": 9
+  },
+  "mcp_call_chain": [
+    {
+      "n": 1,
+      "tool": "list_datasources",
+      "transport": "http",
+      "ok": true,
+      "duration_ms": 12.26,
+      "result_bytes": 415
+    },
+    {
+      "n": 2,
+      "tool": "alerting_manage_rules",
+      "transport": "http",
+      "ok": true,
+      "duration_ms": 139.8,
+      "result_bytes": 6521
+    },
+    {
+      "n": 3,
+      "tool": "alerting_manage_rules",
+      "transport": "http",
+      "ok": true,
+      "duration_ms": 83.16,
+      "result_bytes": 1447
+    },
+    {
+      "n": 4,
+      "tool": "query_prometheus",
+      "transport": "http",
+      "ok": true,
+      "duration_ms": 158.24,
+      "result_bytes": 378026
+    },
+    {
+      "n": 5,
+      "tool": "query_prometheus",
+      "transport": "http",
+      "ok": true,
+      "duration_ms": 159.47,
+      "result_bytes": 400346
+    },
+    {
+      "n": 6,
+      "tool": "get_annotations",
+      "transport": "http",
+      "ok": true,
+      "duration_ms": 33.49,
+      "result_bytes": 4150
+    },
+    {
+      "n": 7,
+      "tool": "query_loki_logs",
+      "transport": "http",
+      "ok": true,
+      "duration_ms": 96.96,
+      "result_bytes": 12294
+    },
+    {
+      "n": 8,
+      "tool": "query_loki_logs",
+      "transport": "http",
+      "ok": true,
+      "duration_ms": 54.73,
+      "result_bytes": 6743
+    },
+    {
+      "n": 9,
+      "tool": "grafana_api_request",
+      "transport": "http",
+      "ok": true,
+      "duration_ms": 67.81,
+      "result_bytes": 13535
+    },
+    {
+      "n": 10,
+      "tool": "search_dashboards",
+      "transport": "http",
+      "ok": true,
+      "duration_ms": 15.37,
+      "result_bytes": 285
+    },
+    {
+      "n": 11,
+      "tool": "generate_deeplink",
+      "transport": "http",
+      "ok": true,
+      "duration_ms": 45.33,
+      "result_bytes": 121
+    },
+    {
+      "n": 12,
+      "tool": "create_incident",
+      "transport": "http",
+      "ok": true,
+      "duration_ms": 57.1,
+      "result_bytes": 445
+    },
+    {
+      "n": 13,
+      "tool": "list_incidents",
+      "transport": "http",
+      "ok": true,
+      "duration_ms": 72.4,
+      "result_bytes": 32
+    },
+    {
+      "n": 14,
+      "tool": "create_annotation",
+      "transport": "http",
+      "ok": true,
+      "duration_ms": 110.87,
+      "result_bytes": 50
+    },
+    {
+      "n": 15,
+      "tool": "query_prometheus",
+      "transport": "http",
+      "ok": true,
+      "duration_ms": 102.02,
+      "result_bytes": 236586
+    },
+    {
+      "n": 16,
+      "tool": "create_annotation",
+      "transport": "http",
+      "ok": true,
+      "duration_ms": 40.18,
+      "result_bytes": 50
+    }
+  ],
+  "evidence_source_tools": [
+    "grafana.mcp:list_alert_rules",
+    "grafana.mcp:get_alert_rule_by_uid",
+    "grafana.mcp:query_prometheus",
+    "grafana.mcp:query_prometheus",
+    "grafana.mcp:find_annotations",
+    "grafana.mcp:query_loki_logs",
+    "grafana.mcp:query_loki_logs",
+    "grafana.mcp:query_tempo_traces",
+    "grafana.mcp:search_dashboards",
+    "grafana.mcp:create_incident",
+    "grafana.mcp:create_annotation",
+    "grafana.mcp:query_prometheus",
+    "grafana.mcp:create_annotation"
+  ],
+  "evidence_summaries": [
+    {
+      "tool": "grafana.mcp:list_alert_rules",
+      "summary": "2 accessibility rule(s) firing for captions; 'End-to-end caption drift outside objective' matches the breached SLO cap.speaker_accuracy"
+    },
+    {
+      "tool": "grafana.mcp:get_alert_rule_by_uid",
+      "summary": "Rule accesspulse-cap-drift objective: 1.5; query: max by (language, territory, platform, player_version) (accesspulse_caption_drift_seconds) > 1.5"
+    },
+    {
+      "tool": "grafana.mcp:query_prometheus",
+      "summary": "accesspulse_caption_speaker_accuracy_ratio: worst observed 1.0 on de/JP/android/android-6.2.0 across 320 series"
+    },
+    {
+      "tool": "grafana.mcp:query_prometheus",
+      "summary": "103768 accessibility-enabled sessions in the affected slices (320 aggregate slices, k-anonymised)"
+    },
+    {
+      "tool": "grafana.mcp:find_annotations",
+      "summary": "13 change annotation(s) in the incident window"
+    },
+    {
+      "tool": "grafana.mcp:query_loki_logs",
+      "summary": "40 log line(s) from capenc-pool-a, 18 at warn/error; first: msg=\"caption pts realigned to new reference\" pool=capenc-pool-a offset_ms=8000 languages=en"
+    },
+    {
+      "tool": "grafana.mcp:query_loki_logs",
+      "summary": "20 timing-reference log line(s); latest: msg=\"clock resynchronisation\" reason=grandmaster_unreachable previous=clock-ptp-primary current=clock-ntp-fallback step_"
+    },
+    {
+      "tool": "grafana.mcp:query_tempo_traces",
+      "summary": "10 media-path trace(s); slowest span media.deliver at 200 ms via media-path"
+    },
+    {
+      "tool": "grafana.mcp:search_dashboards",
+      "summary": "Human review: AccessPulse / Incident investigation"
+    },
+    {
+      "tool": "grafana.mcp:create_incident",
+      "summary": "Grafana incident None declared"
+    },
+    {
+      "tool": "grafana.mcp:create_annotation",
+      "summary": "Approved action written to the Grafana timeline"
+    },
+    {
+      "tool": "grafana.mcp:query_prometheus",
+      "summary": "Post-action accesspulse_caption_speaker_accuracy_ratio: worst 1.0 across 320 series"
+    },
+    {
+      "tool": "grafana.mcp:create_annotation",
+      "summary": "Recovery annotation written to Grafana"
+    }
+  ]
+}

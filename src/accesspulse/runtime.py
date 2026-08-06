@@ -23,6 +23,7 @@ from .contracts import (
     PolicyClass,
     Role,
     SLOTier,
+    utcnow,
 )
 from .executor import RemediationExecutor
 from .faults import FAULT_LIBRARY
@@ -98,6 +99,11 @@ class AccessPulseRuntime:
         self.fault_onset: datetime | None = None
         self.injected_fault_id: str | None = None
 
+        # When told to export, find out once whether the stack is actually
+        # reachable rather than discovering it on every tick.
+        if settings.export_telemetry:
+            self.telemetry.exporters.probe()
+
     # -- lifecycle ---------------------------------------------------------
     async def connect(self) -> None:
         if not self._connected:
@@ -148,12 +154,17 @@ class AccessPulseRuntime:
         emit_component_logs(self.sim, self.telemetry.logs)
         self._emit_media_trace()
         self._emit_profiles()
+        # The programme clock runs faster than wall time; exporting on the same
+        # offset keeps metric, log and trace evidence for one incident inside
+        # one window.
+        exported = self.telemetry.export(utcnow() - self.sim.wall_clock)
         return {
             "program_s": round(self.sim.program_s, 1),
             "wall_clock": self.sim.wall_clock.isoformat(),
             "series_published": published,
             "evaluations": len(self.assurance.last_evaluations),
             "breached_slos": sorted(self.assurance.breaches()),
+            "exported": exported,
         }
 
     def _emit_media_trace(self) -> None:
@@ -167,9 +178,14 @@ class AccessPulseRuntime:
         report = caption_probe.run(obs, "en")
         drift_ms = report.value("cap.drift") * 1000.0
 
+        # Stamped on the programme clock, not the process clock: a span
+        # describing what the media path did at 3m05s into the event belongs
+        # beside the metric and log evidence for that same moment.
+        at = self.sim.wall_clock
         root = self.telemetry.traces.record(
             "media.deliver", "media-path", 180 + rng.uniform(0, 30), trace_id,
             attributes={"event": self.event_id, "component": "feed-program"},
+            start=at,
         )
         chain = [
             ("caption.ingest", "capsrc-en", 12 + rng.uniform(0, 4)),
@@ -189,6 +205,7 @@ class AccessPulseRuntime:
                     "manifest_generation": self.sim.manifest_generation,
                 },
                 status="error" if (name == "caption.encode" and drift_ms > 1500) else "ok",
+                start=at,
             )
 
     def _emit_profiles(self) -> None:

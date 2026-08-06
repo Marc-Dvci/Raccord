@@ -184,18 +184,37 @@ accesspulse serve                 # Prometheus scrapes /metrics
 open http://localhost:3000        # admin / accesspulse
 ```
 
-**The official Grafana MCP server** instead of the in-process one — no agent code changes:
+**The official Grafana MCP server** instead of the in-process one — no agent code changes.
+This is the whole track premise, so it is worth the extra commands:
 
 ```bash
+docker compose up -d
+./tools/grafana_token.sh                            # service-account token into .env
+docker compose --profile mcp up -d mcp-grafana      # the official grafana/mcp-grafana
+pip install -e ".[cloud]"                           # the MCP SDK
+
 # .env
-AP_MCP_TRANSPORT=stdio
-AP_GRAFANA_URL=http://localhost:3000
-AP_GRAFANA_SERVICE_ACCOUNT_TOKEN=<Administration → Service accounts>
+AP_MCP_TRANSPORT=http
+AP_MCP_HTTP_URL=http://localhost:8000/mcp
+AP_EXPORT_TELEMETRY=true      # so the stack has something to be asked about
 ```
 
 ```bash
-accesspulse mcp                   # shows the resolved tool surface and capability mapping
+python tools/mcp_conformance.py --transport http    # 65 tools, 18/20, 12/12 required
+accesspulse serve
+curl -X POST localhost:8080/api/inject -H 'content-type: application/json' \
+     -d '{"fault_id":"cap.progressive_drift","ticks":10,"seconds_per_tick":20}'
+curl -X POST 'localhost:8080/api/incident/run?auto_approve=true'
 ```
+
+Then open the **Agent & MCP** tab. The header reads `http · 65 tools · N calls`, the call chain
+carries network latencies rather than microseconds, and the capability table shows what had to
+be translated to get there: `list_alert_rules → alerting_manage_rules`,
+`query_tempo_traces → grafana_api_request`.
+
+Our own run of exactly this is committed: [`real_mcp_run.json`](real_mcp_run.json) — 16 calls,
+all successful, `REVIEWED`, 9/9 assertions, scope 1.00/1.00. The reasoning, and what it still
+does **not** prove, is in [MCP_CONFORMANCE.md](MCP_CONFORMANCE.md).
 
 **Gemini on Vertex AI:**
 

@@ -39,6 +39,12 @@ class Settings(BaseSettings):
     pyroscope_url: str = "http://localhost:4040"
     otlp_endpoint: str = "http://localhost:4318"
 
+    # Push probe findings, component logs, media-path spans and change
+    # annotations into a real Grafana stack. Off by default: the offline demo
+    # and the 1,000-scenario benchmark must not depend on a Grafana being there,
+    # nor pay for a failed HTTP call on every tick.
+    export_telemetry: bool = False
+
     # Grafana MCP -----------------------------------------------------------
     mcp_transport: str = "stub"  # stub | stdio | http
     mcp_stdio_command: str = "docker"
@@ -46,6 +52,12 @@ class Settings(BaseSettings):
         "run,--rm,-i,-e,GRAFANA_URL,-e,GRAFANA_SERVICE_ACCOUNT_TOKEN,mcp/grafana,-t,stdio"
     )
     mcp_http_url: str = "https://mcp.grafana.com/mcp"
+    # How the *MCP server* should reach Grafana, which is not always how *we*
+    # reach it: the official server usually runs in a container, where our
+    # `http://localhost:3000` is the container itself. Sent as X-Grafana-URL
+    # only when set; left empty, the server uses its own configuration, which
+    # is what docker-compose already gives it. Grafana Cloud needs it set.
+    mcp_grafana_url: str = ""
 
     # Security --------------------------------------------------------------
     approval_signing_key: str = ""

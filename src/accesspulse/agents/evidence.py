@@ -38,7 +38,7 @@ from ..contracts import (
     Incident,
     utcnow,
 )
-from ..grafana_mcp import GrafanaMCPClient, MCPCallError
+from ..grafana_mcp import GrafanaMCPClient, MCPCallError, MCPUnavailable
 from ..telemetry import TelemetryPlane
 
 REQUIRED_CHAIN = (
@@ -81,6 +81,27 @@ class GrafanaEvidenceAgent:
     def __init__(self, mcp: GrafanaMCPClient, telemetry: TelemetryPlane) -> None:
         self.mcp = mcp
         self.telemetry = telemetry
+        self.degraded: list[str] = []
+
+    async def _optional(self, capability: str, **arguments: Any) -> Any | None:
+        """Call a capability whose absence must not stop the investigation.
+
+        Declaring the incident in Grafana and appending to its timeline are
+        write-backs, not evidence. Grafana Incident is a Grafana Cloud product
+        and simply is not there on an open-source Grafana; a caption fix must
+        not be blocked because an incident record could not be filed. Required
+        evidence is never routed through here - a hole in *that* chain still
+        stops the state machine (ADR 0002).
+        """
+        if not self.mcp.has(capability):
+            return None
+        try:
+            return await self.mcp.call(capability, **arguments)
+        except (MCPCallError, MCPUnavailable) as exc:
+            note = f"{capability} unavailable on this Grafana: {exc}"
+            self.degraded.append(note)
+            self.telemetry.logs.append(note, {"service": "accesspulse", "level": "warn"})
+            return None
 
     # -- investigation -----------------------------------------------------
     async def investigate(
@@ -263,14 +284,15 @@ class GrafanaEvidenceAgent:
         ))
 
         # 10. declare the incident in Grafana ---------------------------------
-        if self.mcp.has("create_incident"):
-            gi = _asdict(await self.mcp.call(
-                "create_incident",
-                title=incident.title,
-                severity=alert.severity.value,
-                labels={"slo": slo, "feature": feature,
-                        "accesspulse_incident": incident.incident_id},
-            ))
+        declared = await self._optional(
+            "create_incident",
+            title=incident.title,
+            severity=alert.severity.value,
+            labels={"slo": slo, "feature": feature,
+                    "accesspulse_incident": incident.incident_id},
+        )
+        if declared is not None:
+            gi = _asdict(declared)
             incident.timings["grafana_incident_id"] = 0.0
             evidence.append(_ev(
                 incident.incident_id, EvidenceKind.ANNOTATION, "create_incident",
@@ -283,13 +305,13 @@ class GrafanaEvidenceAgent:
     async def record_action(self, incident: Incident, text: str) -> Evidence | None:
         """Append the approved action to the Grafana incident timeline."""
         gi_id = None
-        if self.mcp.has("list_incidents"):
-            for gi in _aslist(await self.mcp.call("list_incidents", status="active", limit=20)):
-                if gi.get("labels", {}).get("accesspulse_incident") == incident.incident_id:
-                    gi_id = gi["incidentID"]
-                    break
-        if gi_id and self.mcp.has("add_activity_to_incident"):
-            await self.mcp.call("add_activity_to_incident", incidentID=gi_id, body=text)
+        listed = await self._optional("list_incidents", status="active", limit=20)
+        for gi in _aslist(listed) if listed is not None else []:
+            if gi.get("labels", {}).get("accesspulse_incident") == incident.incident_id:
+                gi_id = gi["incidentID"]
+                break
+        if gi_id:
+            await self._optional("add_activity_to_incident", incidentID=gi_id, body=text)
         result = _asdict(await self.mcp.call(
             "create_annotation", text=text,
             tags=["accesspulse", "approved-action", incident.incident_id],

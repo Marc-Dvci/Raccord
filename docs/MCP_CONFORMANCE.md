@@ -1,98 +1,152 @@
 # Grafana MCP conformance — measured, not assumed
 
-AccessPulse never hard-codes a Grafana MCP tool name into an agent. An agent asks
-for a **capability** ("read the firing alert"); `src/accesspulse/grafana_mcp/client.py`
-resolves that capability against whatever the connected server actually advertises,
-and refuses to begin an investigation if a required capability is missing
+AccessPulse agents never name a Grafana MCP tool. An agent asks for a
+**capability** ("read the firing alert"); the client resolves that against
+whatever the connected server advertises, translates the call into that server's
+actual schema, and normalises the answer back
 ([ADR 0002](adr/0002-grafana-mcp-is-the-only-route-to-truth.md)).
 
 That indirection exists because the Grafana MCP tool surface is not stable. This
-document records what happened when we pointed AccessPulse at a real one.
+document records what happened when we pointed AccessPulse at a real one, and it
+is regenerated from artifacts rather than written from memory.
 
 Reproduce it:
 
 ```bash
 docker compose up -d
-tools/grafana_token.sh                                   # mints a service-account token
-docker compose --profile mcp up -d mcp-grafana           # the official server
+./tools/grafana_token.sh                                  # mints a service-account token
+docker compose --profile mcp up -d mcp-grafana            # the official server
 python tools/mcp_conformance.py --transport http --out docs/mcp_conformance.json
 ```
 
 ---
 
-## The measured result
+## 1. What the official server offers
 
-**Server:** official `mcp/grafana` image, `streamable-http` transport, against
-Grafana 11.5.1 provisioned by this repository's `docker-compose.yml`.
+**Server:** official `mcp/grafana` image, `streamable-http`, against Grafana
+11.5.1 provisioned by this repository's `docker-compose.yml`.
 **Date:** 6 August 2026. **Artifact:** [`mcp_conformance.json`](mcp_conformance.json).
 
 | | |
 |---|---|
 | Tools the server advertises | **65** |
 | Capabilities AccessPulse defines | 20 |
-| Capabilities that resolved | **14** |
-| **Required** capabilities that did not resolve | **3** |
+| Capabilities resolved | **18** |
+| **Required capabilities resolved** | **12 of 12** |
 
-### What resolved
+The two unresolved are optional and have no route on this build:
+`get_trace` (fetch one trace by id) and `fetch_pyroscope_profile`.
 
-`list_datasources` · `query_prometheus` · `query_loki_logs` · `query_loki_stats` ·
-`list_prometheus_metric_names` · `list_prometheus_label_values` ·
-`search_dashboards` · `get_dashboard_by_uid` · `generate_deeplink` ·
-`create_annotation` · `list_incidents` · `create_incident` ·
-`add_activity_to_incident` — and `find_annotations`, which resolved to the
-server's `get_annotations`. That last one is the mechanism working: the tool was
-renamed, the capability table already carried both names, and no agent changed.
+### Three of them do not resolve by name
 
-### What did not
+Resolution alone was not enough, and this is the interesting part:
 
-| Capability | Why | Consequence |
+| Capability | What the server actually has | How it is reached |
 |---|---|---|
-| `list_alert_rules` | Consolidated into an action-dispatch tool, `alerting_manage_rules` | Step 1 of the mandatory chain is unavailable **by that name** |
-| `get_alert_rule` | Same consolidation | Step 2 unavailable by name |
-| `query_tempo_traces` | **No trace tool exists in this build.** The server's enabled-tool list is `search,datasource,incident,prometheus,loki,alerting,dashboard,folder,oncall,asserts,sift,pyroscope,navigation,proxied,annotations,rendering,snapshot,plugin,api,config,provisioning` — there is no Tempo category | Step 7 has no route at all |
+| `list_alert_rules` | folded into `alerting_manage_rules`, an action-dispatch tool | `operation: "list"`, plus label selectors rewritten into Prometheus-style strings |
+| `get_alert_rule` | same tool | `operation: "get"`, `rule_uid` |
+| `query_tempo_traces` | **nothing — there is no Tempo tool.** The enabled-tool list has no trace category at all | `grafana_api_request` against Grafana's Tempo datasource proxy, which is how Grafana's own Explore queries Tempo |
 
-The first two are a **naming** problem: the capability exists, behind a different
-tool with a different argument shape. Resolving them needs an argument-translation
-layer, not just another entry in the candidate list — adding the name alone would
-turn a clean refusal at connect time into a confusing failure mid-investigation,
-which is worse. That layer is **not built**.
+`find_annotations` resolved to the server's `get_annotations` with no code
+change at all — the capability table already carried both names. That is the
+mechanism working as designed.
 
-The third is a **capability** problem: the current open-source server exposes no
-way to query traces. Grafana's own API is reachable through the server's generic
-`grafana_api_request` tool, so the datasource proxy is a plausible route, but
-routing trace evidence that way is a design decision with real consequences for
-what "evidence came through MCP" means, and it has not been taken.
+## 2. Why a name is not enough
 
----
+The dedicated tools and the dispatch tool take different arguments and answer in
+different shapes. `src/accesspulse/grafana_mcp/adapters.py` holds one adapter per
+(capability, tool) pair that deviates from the canonical shape. Things it had to
+reconcile, each found by running it:
 
-## What this means, stated plainly
+- **Time formats.** Grafana's parser rejects the fractional seconds Python's
+  `isoformat()` emits. Every timestamp is re-emitted as `%Y-%m-%dT%H:%M:%SZ`;
+  annotations want epoch milliseconds instead.
+- **Datasource UIDs.** Real tools require an explicit `datasourceUid`. These are
+  **discovered** at connect time via `list_datasources`, not assumed — a Grafana
+  somebody else provisioned will not have named things the way ours does.
+- **Prometheus returns a matrix**, not the reduced series the agents read. The
+  adapter collapses it with the aggregation the caller asked for, and sorts worst-first.
+- **Alert rules come back with an empty `uid`** from the list operation. Ours are
+  provisioned from the SLO catalogue, so the uid is *recovered* from the `slo`
+  label rather than invented; without that label it stays empty and the rule
+  simply cannot be fetched in detail.
+- **`generate_deeplink` answers with a bare URL string**, not JSON.
+- **Grafana Incident wants labels as a list of objects**, not a mapping.
 
-**Against this server today, an AccessPulse investigation cannot leave `SCOPED`.**
-That is the system behaving exactly as documented — `REQUIRED_EVIDENCE_TOOLS` in
-`src/accesspulse/incident.py` demands alert, metric, log, trace and dashboard
-evidence, all with a Grafana MCP `source_tool`, and it will not accept a chain
-with a hole in it. The refusal is the safety property, not a bug in it.
+Nothing in that layer decides anything operational. It renames, reduces and
+re-labels. When a translation cannot be made honestly it raises, and the
+capability is treated as unavailable — the state machine then refuses to leave
+`SCOPED` rather than proceed on evidence that is not there.
 
-It does mean the numbers in [BENCHMARK.md](BENCHMARK.md) and the hero run in the
-README were produced against the **in-process MCP server** (`AP_MCP_TRANSPORT=stub`),
-which implements the tool surface the capability table was written against. That
-is stated in those documents and it is what makes the benchmark reproducible with
-no credentials — but it should not be read as "this has been run end to end
-against the official server", because it has not.
+`tests/test_adapters.py` pins all of the above against the shapes recorded here,
+so the next time the server moves, a test names the translation that stopped
+being true instead of an investigation dying halfway through.
 
-What *has* been demonstrated against the official server: connection over the MCP
-protocol, session initialisation, tool discovery of all 65 tools, and capability
-resolution — the artifact above is the output, not a description of it.
+## 3. The closed loop, against the official server
 
-## What would close the gap
+**It runs.** Artifact: [`real_mcp_run.json`](real_mcp_run.json).
 
-1. An argument-translation layer per resolved tool, so a capability call is
-   rewritten into the connected server's actual schema and its response
-   normalised back. This is the real work; the capability table already gives it
-   the right place to live.
-2. A decision on traces: either route them through `grafana_api_request` to the
-   Tempo datasource proxy and say so, or demote the trace capability to optional
-   and accept that an investigation can close without a trace — which weakens a
-   claim this project makes deliberately.
-3. Re-running `tools/mcp_conformance.py` after either change, and replacing the
-   artifact above rather than editing this prose.
+| | |
+|---|---|
+| Final state | **`REVIEWED`** |
+| Recovered and verified | **yes** |
+| Post-action assertions | **9 / 9 passing** |
+| Scope precision / recall | **1.00 / 1.00** |
+| Unsafe actions | **0** |
+| Audit chain valid | yes |
+| Sessions affected / protected | 8,053 / 140,295 |
+| **Grafana MCP calls** | **16, all successful** |
+
+The call chain, every one of them through the official server:
+
+```
+ 1 list_datasources        7 query_loki_logs        13 list_incidents
+ 2 alerting_manage_rules   8 query_loki_logs        14 create_annotation
+ 3 alerting_manage_rules   9 grafana_api_request    15 query_prometheus
+ 4 query_prometheus       10 search_dashboards      16 create_annotation
+ 5 query_prometheus       11 generate_deeplink
+ 6 get_annotations        12 create_incident
+```
+
+Every evidence item in the resulting incident carries a `grafana.mcp:` source
+tool. The alert that opened it was a **real Grafana alert rule in `firing`
+state**, evaluated by Grafana against real Prometheus data. The logs are real
+Loki. The traces are real Tempo. The change annotations are real Grafana
+annotations.
+
+### What makes that possible
+
+AccessPulse has to *put* data in the stack before it can read it back through
+MCP. `AP_EXPORT_TELEMETRY=true` pushes probe findings (scraped from `/metrics`),
+component logs (Loki push API), media-path spans (OTLP) and change annotations
+(Grafana annotations API) into the stack as the event advances.
+
+That is AccessPulse emitting its own telemetry, not the agent gathering
+evidence. The agent still learns nothing except through the MCP server. The
+export path also maps the simulated programme clock onto the real one, because
+the event advances faster than wall time and metric, log and trace evidence for
+one incident have to land in one window to be correlated at all.
+
+## 4. Degradation, on purpose
+
+`create_incident`, `add_activity_to_incident` and `list_incidents` are Grafana
+Incident (IRM) features. They are **optional** capabilities, and a call that
+fails is recorded as a degradation note rather than raised: filing an incident
+record is a write-back, and a caption fix must not be blocked because an
+optional one could not be filed.
+
+Required evidence is never routed that way. A hole in the alert / metric / log /
+trace / dashboard chain still stops the state machine dead.
+
+## 5. What is still not demonstrated
+
+- **Grafana Cloud's hosted MCP endpoint** (`https://mcp.grafana.com/mcp`) with
+  OAuth. Everything above is the open-source server; the client speaks the same
+  transport to both, and `mcp_grafana_url` exists for exactly that case, but we
+  have not run it.
+- **`get_trace` and Pyroscope profiles**, which this build does not expose.
+- The published benchmark in [BENCHMARK.md](BENCHMARK.md) is still produced
+  against the **in-process** server. That is deliberate — 1,000 scenarios with
+  ablations has to run with no credentials and no network to be reproducible —
+  but it means the benchmark numbers are not measurements of the real-server
+  path. The single run above is.

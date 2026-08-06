@@ -1,10 +1,10 @@
 {
-  "generated": "2026-08-06T16:06:26+00:00",
+  "generated": "2026-08-06T18:21:47+00:00",
   "transport": "http",
-  "grafana_url": "http://grafana:3000",
+  "grafana_url": "http://localhost:3000",
   "endpoint": "http://localhost:8000/mcp",
-  "connected": false,
-  "detail": "the connected Grafana MCP server does not expose required capabilities: list_alert_rules, get_alert_rule, query_tempo_traces (server advertises 65 tools)",
+  "connected": true,
+  "detail": "",
   "server_tool_count": 65,
   "server_tools": [
     "add_activity_to_incident",
@@ -74,12 +74,8 @@
     "validate_provisioning_file"
   ],
   "capabilities_total": 20,
-  "capabilities_resolved": 15,
-  "required_unresolved": [
-    "list_alert_rules",
-    "get_alert_rule",
-    "query_tempo_traces"
-  ],
+  "capabilities_resolved": 18,
+  "required_unresolved": [],
   "optional_unresolved": [
     "get_trace",
     "fetch_pyroscope_profile"
@@ -109,18 +105,20 @@
       "capability": "list_alert_rules",
       "required": true,
       "candidates": [
-        "list_alert_rules"
+        "list_alert_rules",
+        "alerting_manage_rules"
       ],
-      "resolved_tool": null,
+      "resolved_tool": "alerting_manage_rules",
       "purpose": "read the firing accessibility alert"
     },
     {
       "capability": "get_alert_rule",
       "required": true,
       "candidates": [
-        "get_alert_rule_by_uid"
+        "get_alert_rule_by_uid",
+        "alerting_manage_rules"
       ],
-      "resolved_tool": null,
+      "resolved_tool": "alerting_manage_rules",
       "purpose": "read the rule definition and labels behind the alert"
     },
     {
@@ -174,9 +172,10 @@
       "candidates": [
         "query_tempo_traces",
         "find_traces",
-        "search_traces"
+        "search_traces",
+        "grafana_api_request"
       ],
-      "resolved_tool": null,
+      "resolved_tool": "grafana_api_request",
       "purpose": "follow the media path trace through the affected pool"
     },
     {
