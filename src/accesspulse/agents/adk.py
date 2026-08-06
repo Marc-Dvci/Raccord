@@ -108,15 +108,28 @@ def build_mcp_toolset():
     )
 
     settings = get_settings()
+    server = StdioServerParameters(
+        command=settings.mcp_stdio_command,
+        args=settings.mcp_stdio_argv,
+        env={
+            "GRAFANA_URL": settings.grafana_url,
+            "GRAFANA_SERVICE_ACCOUNT_TOKEN": settings.grafana_service_account_token,
+        },
+    )
+    # Passing StdioServerParameters straight to MCPToolset still works but ADK
+    # deprecates it and warns on every construction. Wrap it where the newer
+    # type exists, and fall back where it does not.
+    try:
+        from google.adk.tools.mcp_tool.mcp_session_manager import (  # type: ignore
+            StdioConnectionParams,
+        )
+
+        connection = StdioConnectionParams(server_params=server)
+    except ImportError:  # pragma: no cover - older ADK
+        connection = server
+
     return MCPToolset(
-        connection_params=StdioServerParameters(
-            command=settings.mcp_stdio_command,
-            args=settings.mcp_stdio_argv,
-            env={
-                "GRAFANA_URL": settings.grafana_url,
-                "GRAFANA_SERVICE_ACCOUNT_TOKEN": settings.grafana_service_account_token,
-            },
-        ),
+        connection_params=connection,
         tool_filter=[
             "list_datasources",
             "list_alert_rules",

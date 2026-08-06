@@ -29,10 +29,18 @@ dependencies = [
 [project.optional-dependencies]
 # Cloud / partner runtime. Not required for the fully local demo.
 cloud = [
-  "google-adk>=1.0.0",
+  # ADK's MCP support lives behind its own "mcp" extra. Without it google-adk
+  # installs happily and `MCPToolset` fails to import at call time, which is the
+  # worst possible place to discover it.
+  "google-adk[mcp]>=1.0.0",
   "google-genai>=1.0.0",
   "google-cloud-aiplatform[agent_engines,adk]>=1.101.0",
-  "mcp>=1.2.0",
+  # Upper bound because google-adk requires mcp<2: the 2.0 SDK moved
+  # `mcp.shared.session`, which ADK's toolset imports. Our own client in
+  # src/accesspulse/grafana_mcp/client.py works against either generation, but
+  # pinning here stops `pip install -e ".[cloud]"` resolving to a combination in
+  # which the Gemini reasoning plane cannot reach Grafana MCP at all.
+  "mcp>=1.24,<2",
 ]
 otel = [
   "opentelemetry-sdk>=1.25",
