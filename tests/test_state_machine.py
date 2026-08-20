@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from accesspulse.contracts import (
+from raccord.contracts import (
     Alert,
     AssertionStatus,
     Incident,
@@ -13,7 +13,7 @@ from accesspulse.contracts import (
     VerificationAssertion,
     utcnow,
 )
-from accesspulse.incident import IncidentMachine, IncidentStateError
+from raccord.incident import IncidentMachine, IncidentStateError
 
 
 def _incident() -> Incident:
@@ -21,9 +21,15 @@ def _incident() -> Incident:
 
 
 def _alert() -> Alert:
-    return Alert(alert_id="a1", rule_uid="r1", rule_title="t", state="firing",
-                 severity=Severity.SEV2, fired_at=utcnow(),
-                 labels={"slo": "cap.drift", "feature": "captions"})
+    return Alert(
+        alert_id="a1",
+        rule_uid="r1",
+        rule_title="t",
+        state="firing",
+        severity=Severity.SEV2,
+        fired_at=utcnow(),
+        labels={"slo": "cap.drift", "feature": "captions"},
+    )
 
 
 def test_illegal_transition_is_refused():
@@ -52,12 +58,22 @@ def test_recovered_requires_every_mandatory_assertion():
     inc = _incident()
     inc.state = IncidentState.VERIFYING
     inc.assertions = [
-        VerificationAssertion(assertion_id="v1", incident_id=inc.incident_id,
-                              name="a", description="", mandatory=True,
-                              status=AssertionStatus.PASSING),
-        VerificationAssertion(assertion_id="v2", incident_id=inc.incident_id,
-                              name="b", description="", mandatory=True,
-                              status=AssertionStatus.FAILING),
+        VerificationAssertion(
+            assertion_id="v1",
+            incident_id=inc.incident_id,
+            name="a",
+            description="",
+            mandatory=True,
+            status=AssertionStatus.PASSING,
+        ),
+        VerificationAssertion(
+            assertion_id="v2",
+            incident_id=inc.incident_id,
+            name="b",
+            description="",
+            mandatory=True,
+            status=AssertionStatus.FAILING,
+        ),
     ]
     m = IncidentMachine(inc)
     ok, unmet = m.can(IncidentState.RECOVERED)
@@ -69,9 +85,14 @@ def test_rollback_requires_a_real_failure():
     inc = _incident()
     inc.state = IncidentState.VERIFYING
     inc.assertions = [
-        VerificationAssertion(assertion_id="v1", incident_id=inc.incident_id,
-                              name="a", description="", mandatory=True,
-                              status=AssertionStatus.PASSING),
+        VerificationAssertion(
+            assertion_id="v1",
+            incident_id=inc.incident_id,
+            name="a",
+            description="",
+            mandatory=True,
+            status=AssertionStatus.PASSING,
+        ),
     ]
     m = IncidentMachine(inc)
     ok, unmet = m.can(IncidentState.ROLLED_BACK)

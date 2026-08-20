@@ -16,7 +16,7 @@ respect for these audiences building it would be self-refuting.
 
 ## Decision
 
-**AccessPulse never infers, records or acts on a person's disability, impairment,
+**Raccord never infers, records or acts on a person's disability, impairment,
 assistive-technology use, or identity.**
 
 Operationally:

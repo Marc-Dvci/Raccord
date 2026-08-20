@@ -2,6 +2,8 @@ __pycache__/
 *.py[cod]
 .venv/
 .venv-mcp/
+.tmp-audit-venv/
+.tools/
 venv/
 .env
 *.egg-info/
@@ -22,6 +24,7 @@ var/
 infra/terraform/.terraform/
 infra/terraform/*.tfstate*
 infra/terraform/*.tfvars
+!infra/terraform/terraform.tfvars.example
 
 # Compiled eBPF objects.
 ebpf/*.bpf.o

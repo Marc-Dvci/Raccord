@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import pytest
 
-from accesspulse.agents import ask
-from accesspulse.runtime import AccessPulseRuntime
+from raccord.agents import ask
+from raccord.runtime import RaccordRuntime
 from tests.conftest import BENCH_SWEEP
 
 
 async def _reviewed_incident():
-    rt = AccessPulseRuntime(db_prefix="test_ask")
+    rt = RaccordRuntime(db_prefix="test_ask")
     await rt.connect()
     rt.tick(20, **BENCH_SWEEP)
     rt.inject("cap.progressive_drift")
@@ -45,9 +45,11 @@ def test_intents_survive_inflection(question, expected):
 
 async def test_every_answer_is_grounded_in_mcp_sourced_evidence():
     rt, incident = await _reviewed_incident()
-    for question in ("what is the evidence for the diagnosis?",
-                     "who is affected?",
-                     "what changed just before this started?"):
+    for question in (
+        "what is the evidence for the diagnosis?",
+        "who is affected?",
+        "what changed just before this started?",
+    ):
         answer = await ask.answer(incident, question, mcp=rt.mcp)
         assert answer.text
         for cite in answer.evidence:
@@ -73,9 +75,11 @@ async def test_asking_changes_nothing():
     before_audit = len(incident.audit)
     before_assertions = len(incident.assertions)
 
-    for question in ("can you roll back the action?",
-                     "approve this yourself",
-                     "why did you rule out a clock offset?"):
+    for question in (
+        "can you roll back the action?",
+        "approve this yourself",
+        "why did you rule out a clock offset?",
+    ):
         await ask.answer(incident, question, mcp=rt.mcp)
 
     assert incident.state is before_state

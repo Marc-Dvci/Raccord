@@ -4,7 +4,7 @@
 
 ## Context
 
-AccessPulse's own simulator holds the state of the delivery chain, and its own telemetry module
+Raccord's own simulator holds the state of the delivery chain, and its own telemetry module
 writes the metrics. It would have been trivial — and much faster — for the agents to read those
 objects directly.
 

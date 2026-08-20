@@ -3,13 +3,13 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "accesspulse"
+name = "raccord"
 version = "0.1.0"
-description = "AccessPulse - Accessible Experience Reliability Platform (Grafana track, Agentic Cinema)"
+description = "Raccord - Accessible Experience Reliability Platform (Grafana track, Agentic Cinema)"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { file = "LICENSE" }
-authors = [{ name = "AccessPulse Team" }]
+authors = [{ name = "Raccord Team" }]
 
 dependencies = [
   "fastapi>=0.115",
@@ -30,37 +30,54 @@ dependencies = [
 # Cloud / partner runtime. Not required for the fully local demo.
 cloud = [
   # ADK's MCP support lives behind its own "mcp" extra. Without it google-adk
-  # installs happily and `MCPToolset` fails to import at call time, which is the
+  # installs happily and `McpToolset` fails to import at call time, which is the
   # worst possible place to discover it.
-  "google-adk[mcp]>=1.0.0",
-  "google-genai>=1.0.0",
-  "google-cloud-aiplatform[agent_engines,adk]>=1.101.0",
+  # These versions are the clean Python 3.12 / Cloud Build matrix verified by
+  # the release audit. Pinning them keeps a rebuild from silently changing the
+  # managed-agent or telemetry protocol immediately before judging.
+  "google-adk[mcp]==2.7.1",
+  "google-genai==2.19.0",
+  "google-cloud-aiplatform==1.165.1",
+  "agento11y==0.16.0",
+  "agento11y-google-adk==0.16.0",
+  "google-cloud-storage==3.13.1",
+  "google-cloud-pubsub==2.39.1",
+  "google-cloud-bigquery==3.43.0",
   # Upper bound because google-adk requires mcp<2: the 2.0 SDK moved
   # `mcp.shared.session`, which ADK's toolset imports. Our own client in
-  # src/accesspulse/grafana_mcp/client.py works against either generation, but
+  # src/raccord/grafana_mcp/client.py works against either generation, but
   # pinning here stops `pip install -e ".[cloud]"` resolving to a combination in
   # which the Gemini reasoning plane cannot reach Grafana MCP at all.
-  "mcp>=1.24,<2",
+  "mcp==1.29.0",
 ]
 otel = [
-  "opentelemetry-sdk>=1.25",
-  "opentelemetry-exporter-otlp-proto-http>=1.25",
-  "opentelemetry-instrumentation-fastapi>=0.46b0",
+  # AgentO11y 0.16 and ADK 2.7.1 share this OTel release line. Unbounded
+  # requirements make pip backtrack across every OTel release in a clean build.
+  "opentelemetry-sdk==1.42.1",
+  "opentelemetry-exporter-otlp-proto-http==1.42.1",
+  "opentelemetry-exporter-otlp-proto-common==1.42.1",
+  "opentelemetry-proto==1.42.1",
+  "opentelemetry-instrumentation-fastapi==0.63b1",
+  "opentelemetry-instrumentation==0.63b1",
+  "opentelemetry-instrumentation-asgi==0.63b1",
+  "opentelemetry-instrumentation-starlette==0.63b1",
+  "opentelemetry-util-http==0.63b1",
 ]
 dev = [
   "pytest>=8.2",
   "pytest-asyncio>=0.23",
   "ruff>=0.5",
+  "tomli>=2.0; python_version < '3.11'",
 ]
 
 [project.scripts]
-accesspulse = "accesspulse.cli:app"
+raccord = "raccord.cli:app"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.package-data]
-accesspulse = ["web/**/*", "data/**/*"]
+raccord = ["web/**/*", "data/**/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -81,8 +98,8 @@ select = ["E", "F", "W", "I"]
 # of a screenplay to satisfy a line-length rule would make the script harder to
 # read and the translations harder to compare, which is the opposite of the
 # point.
-"src/accesspulse/media.py" = ["E501"]
+"src/raccord/media.py" = ["E501"]
 # The audience communications are multi-line f-string templates. A `noqa` inside
 # one would be rendered into the message, and rewrapping a sentence to satisfy a
 # linter would change what an operator reads during an incident.
-"src/accesspulse/agents/core.py" = ["E501"]
+"src/raccord/agents/core.py" = ["E501"]

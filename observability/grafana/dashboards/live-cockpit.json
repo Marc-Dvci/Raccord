@@ -1,9 +1,9 @@
 {
-  "uid": "ap-cockpit",
-  "title": "AccessPulse / Live event command centre",
+  "uid": "raccord-cockpit",
+  "title": "Raccord / Live event command centre",
   "description": "What every audience slice is receiving right now, against what was promised.",
   "tags": [
-    "accesspulse",
+    "raccord",
     "live",
     "event"
   ],
@@ -23,14 +23,14 @@
         "type": "query",
         "datasource": {
           "type": "prometheus",
-          "uid": "ap-prom"
+          "uid": "raccord-prom"
         },
         "refresh": 2,
         "includeAll": true,
         "multi": true,
         "label": "Language",
         "query": {
-          "query": "label_values(accesspulse_caption_drift_seconds, language)"
+          "query": "label_values(raccord_caption_drift_seconds, language)"
         }
       },
       {
@@ -38,14 +38,14 @@
         "type": "query",
         "datasource": {
           "type": "prometheus",
-          "uid": "ap-prom"
+          "uid": "raccord-prom"
         },
         "refresh": 2,
         "includeAll": true,
         "multi": true,
         "label": "Territory",
         "query": {
-          "query": "label_values(accesspulse_caption_drift_seconds, territory)"
+          "query": "label_values(raccord_caption_drift_seconds, territory)"
         }
       },
       {
@@ -53,14 +53,14 @@
         "type": "query",
         "datasource": {
           "type": "prometheus",
-          "uid": "ap-prom"
+          "uid": "raccord-prom"
         },
         "refresh": 2,
         "includeAll": true,
         "multi": true,
         "label": "Player build",
         "query": {
-          "query": "label_values(accesspulse_caption_drift_seconds, player_version)"
+          "query": "label_values(raccord_caption_drift_seconds, player_version)"
         }
       }
     ]
@@ -68,7 +68,7 @@
   "annotations": {
     "list": [
       {
-        "name": "AccessPulse actions",
+        "name": "Raccord actions",
         "datasource": {
           "type": "grafana",
           "uid": "-- Grafana --"
@@ -79,7 +79,7 @@
           "type": "tags",
           "matchAny": true,
           "tags": [
-            "accesspulse",
+            "raccord",
             "approved-action",
             "recovery"
           ]
@@ -118,7 +118,7 @@
       },
       "options": {
         "mode": "markdown",
-        "content": "Promised experiences for the current event, and what each audience slice is receiving right now. Orange annotations are deployments and configuration changes; purple annotations are AccessPulse approved actions and recoveries."
+        "content": "Promised experiences for the current event, and what each audience slice is receiving right now. Orange annotations are deployments and configuration changes; purple annotations are Raccord approved actions and recoveries."
       }
     },
     {
@@ -128,7 +128,7 @@
       "description": "",
       "datasource": {
         "type": "prometheus",
-        "uid": "ap-prom"
+        "uid": "raccord-prom"
       },
       "gridPos": {
         "x": 0,
@@ -139,10 +139,10 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "max(accesspulse_caption_drift_seconds{language=~\"$language\",territory=~\"$territory\",player_version=~\"$player_version\"})",
+          "expr": "max(raccord_caption_drift_seconds{language=~\"$language\",territory=~\"$territory\",player_version=~\"$player_version\"})",
           "datasource": {
             "type": "prometheus",
-            "uid": "ap-prom"
+            "uid": "raccord-prom"
           }
         }
       ],
@@ -190,7 +190,7 @@
       "description": "",
       "datasource": {
         "type": "prometheus",
-        "uid": "ap-prom"
+        "uid": "raccord-prom"
       },
       "gridPos": {
         "x": 4,
@@ -201,10 +201,10 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "min(accesspulse_caption_track_available_ratio{language=~\"$language\",territory=~\"$territory\",player_version=~\"$player_version\"})",
+          "expr": "min(raccord_caption_track_available_ratio{language=~\"$language\",territory=~\"$territory\",player_version=~\"$player_version\"})",
           "datasource": {
             "type": "prometheus",
-            "uid": "ap-prom"
+            "uid": "raccord-prom"
           }
         }
       ],
@@ -248,7 +248,7 @@
       "description": "",
       "datasource": {
         "type": "prometheus",
-        "uid": "ap-prom"
+        "uid": "raccord-prom"
       },
       "gridPos": {
         "x": 8,
@@ -259,10 +259,10 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "min(accesspulse_ad_audio_present_ratio)",
+          "expr": "min(raccord_ad_audio_present_ratio)",
           "datasource": {
             "type": "prometheus",
-            "uid": "ap-prom"
+            "uid": "raccord-prom"
           }
         }
       ],
@@ -306,7 +306,7 @@
       "description": "",
       "datasource": {
         "type": "prometheus",
-        "uid": "ap-prom"
+        "uid": "raccord-prom"
       },
       "gridPos": {
         "x": 12,
@@ -317,10 +317,10 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "min(accesspulse_sign_fps)",
+          "expr": "min(raccord_sign_fps)",
           "datasource": {
             "type": "prometheus",
-            "uid": "ap-prom"
+            "uid": "raccord-prom"
           }
         }
       ],
@@ -364,7 +364,7 @@
       "description": "",
       "datasource": {
         "type": "prometheus",
-        "uid": "ap-prom"
+        "uid": "raccord-prom"
       },
       "gridPos": {
         "x": 16,
@@ -375,10 +375,10 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "min(accesspulse_player_keyboard_completion_ratio)",
+          "expr": "min(raccord_player_keyboard_completion_ratio)",
           "datasource": {
             "type": "prometheus",
-            "uid": "ap-prom"
+            "uid": "raccord-prom"
           }
         }
       ],
@@ -422,7 +422,7 @@
       "description": "",
       "datasource": {
         "type": "prometheus",
-        "uid": "ap-prom"
+        "uid": "raccord-prom"
       },
       "gridPos": {
         "x": 20,
@@ -433,10 +433,10 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "min(accesspulse_player_screenreader_completion_ratio)",
+          "expr": "min(raccord_player_screenreader_completion_ratio)",
           "datasource": {
             "type": "prometheus",
-            "uid": "ap-prom"
+            "uid": "raccord-prom"
           }
         }
       ],
@@ -480,7 +480,7 @@
       "description": "Signed offset between rendered captions and aligned spoken dialogue, measured by the caption probe.",
       "datasource": {
         "type": "prometheus",
-        "uid": "ap-prom"
+        "uid": "raccord-prom"
       },
       "gridPos": {
         "x": 0,
@@ -491,11 +491,11 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "accesspulse_caption_drift_seconds{language=~\"$language\",territory=~\"$territory\",player_version=~\"$player_version\"}",
+          "expr": "raccord_caption_drift_seconds{language=~\"$language\",territory=~\"$territory\",player_version=~\"$player_version\"}",
           "legendFormat": "{{language}} / {{territory}} / {{player_version}}",
           "datasource": {
             "type": "prometheus",
-            "uid": "ap-prom"
+            "uid": "raccord-prom"
           }
         }
       ],
@@ -547,7 +547,7 @@
       "description": "",
       "datasource": {
         "type": "prometheus",
-        "uid": "ap-prom"
+        "uid": "raccord-prom"
       },
       "gridPos": {
         "x": 12,
@@ -558,12 +558,12 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "accesspulse_slo_breached",
+          "expr": "raccord_slo_breached",
           "format": "table",
           "instant": true,
           "datasource": {
             "type": "prometheus",
-            "uid": "ap-prom"
+            "uid": "raccord-prom"
           }
         }
       ],
@@ -598,7 +598,7 @@
       "description": "",
       "datasource": {
         "type": "prometheus",
-        "uid": "ap-prom"
+        "uid": "raccord-prom"
       },
       "gridPos": {
         "x": 0,
@@ -609,11 +609,11 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "accesspulse_sessions_caption_enabled{language=~\"$language\",territory=~\"$territory\",player_version=~\"$player_version\"}",
+          "expr": "raccord_sessions_caption_enabled{language=~\"$language\",territory=~\"$territory\",player_version=~\"$player_version\"}",
           "legendFormat": "{{language}} / {{territory}} / {{player_version}}",
           "datasource": {
             "type": "prometheus",
-            "uid": "ap-prom"
+            "uid": "raccord-prom"
           }
         }
       ],
@@ -661,7 +661,7 @@
       "description": "",
       "datasource": {
         "type": "prometheus",
-        "uid": "ap-prom"
+        "uid": "raccord-prom"
       },
       "gridPos": {
         "x": 8,
@@ -672,11 +672,11 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "accesspulse_encoder_cpu_utilisation or accesspulse_gpu_utilisation",
+          "expr": "raccord_encoder_cpu_utilisation or raccord_gpu_utilisation",
           "legendFormat": "{{language}} / {{territory}} / {{player_version}}",
           "datasource": {
             "type": "prometheus",
-            "uid": "ap-prom"
+            "uid": "raccord-prom"
           }
         }
       ],
@@ -723,7 +723,7 @@
       "title": "Delivery chain logs",
       "datasource": {
         "type": "loki",
-        "uid": "ap-loki"
+        "uid": "raccord-loki"
       },
       "gridPos": {
         "x": 16,
@@ -737,7 +737,7 @@
           "expr": "{service=~\"capenc-.*|packager-main|cdn-primary|clock-.*|signsrc-.*\"}",
           "datasource": {
             "type": "loki",
-            "uid": "ap-loki"
+            "uid": "raccord-loki"
           }
         }
       ],

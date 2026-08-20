@@ -4,7 +4,7 @@
 the harness scores against it.
 
 ```bash
-accesspulse bench --scenarios 1000                      # the published run
+raccord bench --scenarios 1000                      # the published run
 python -m bench.harness --scenarios 200 --workers 7     # a faster subset
 python -m bench.harness --ablations-only --workers 7    # re-run ablations only
 python -m bench.calibration                             # the measurement models
@@ -243,11 +243,11 @@ network:
 
 ```bash
 pip install -e ".[dev]"
-accesspulse bench --scenarios 1000            # ~44 min on 7 workers
+raccord bench --scenarios 1000            # ~44 min on 7 workers
 ```
 
 A single scenario, replayed exactly:
 
 ```bash
-accesspulse hero --fault infra.stale_config --json run.json
+raccord hero --fault infra.stale_config --json run.json
 ```

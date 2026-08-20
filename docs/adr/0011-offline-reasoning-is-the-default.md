@@ -15,12 +15,12 @@ the model and show the loop still closes.
 
 ## Decision
 
-`AP_REASONING_MODE=offline` is the **default**. In offline mode a deterministic reasoning plane
+`RACCORD_REASONING_MODE=offline` is the **default**. In offline mode a deterministic reasoning plane
 produces the explanation, the uncertainty statement, the hypothesis selection among enumerated
 options, and the six communications. The closed loop reaches a verified recovery with the
 language model removed entirely.
 
-Setting `AP_REASONING_MODE=gemini` swaps the plane. Nothing else changes: the same typed
+Setting `RACCORD_REASONING_MODE=gemini` swaps the plane. Nothing else changes: the same typed
 contracts, the same state machine, the same policy, the same executor, the same MCP tool
 surface. The 1,000-scenario benchmark runs in offline mode, which is why its numbers are exactly
 reproducible.
@@ -43,7 +43,7 @@ UI and in `/api/agent-observability`.
 
 ## Consequences
 
-**Good.** `git clone && pip install && accesspulse hero` works, with no credentials, no cloud
+**Good.** `git clone && pip install && raccord hero` works, with no credentials, no cloud
 account and no network. The benchmark is deterministic and free to run. The claim "the model
 cannot decide anything" is demonstrable by deleting it.
 

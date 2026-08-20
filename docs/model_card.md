@@ -1,6 +1,6 @@
-# Model card — AccessPulse measurement models
+# Model card — Raccord measurement models
 
-AccessPulse contains several models. This card covers all of them, because the honest
+Raccord contains several models. This card covers all of them, because the honest
 description of the system is that **the models measure and the deterministic core decides**,
 and a card that only described the language model would misrepresent where the intelligence
 lives.
@@ -15,7 +15,7 @@ lives.
 | Character-trigram language identifier | in `probes/text.py` | Flags wrong-language delivery | No |
 | Hashed n-gram embedding | in `probes/text.py` | Semantic-preservation signal | No |
 | Diagnosis ranker | in `agents/core.py` | Ranks hypotheses with posteriors | Ranks; the policy engine decides |
-| Gemini reasoning plane | `gemini-2.5-pro` via Vertex AI | Explanation, uncertainty, communications | **No** — see [THREAT_MODEL.md](THREAT_MODEL.md) §5 |
+| Gemini reasoning plane | `gemini-3.1-pro-preview` via Vertex AI | Synthesis, uncertainty, communications, operator Q&A, learning | **No** — see [THREAT_MODEL.md](THREAT_MODEL.md) §5 |
 
 ---
 
@@ -33,7 +33,7 @@ verification of a remediation, and evidence for a post-incident review.
   makes **no claim whatsoever about signing quality, grammar, register or comprehension**. A
   test asserts this (`test_sign_probe_makes_no_semantic_claim`). Signing quality is a judgement
   for Deaf viewers and qualified assessors, not for a monitoring system.
-- **Certifying legal compliance.** AccessPulse measures what it measures. It does not certify
+- **Certifying legal compliance.** Raccord measures what it measures. It does not certify
   EN 301 549 or WCAG conformance of a programme.
 - **Anything about individual viewers.** See [PRIVACY.md](PRIVACY.md).
 - **Replacing human review of described audio.** Semantic coverage is a *signal* that the
@@ -142,8 +142,9 @@ are worth once the rest of the system consumes them. The ablation that removes p
 
 ## 5. The reasoning plane (Gemini)
 
-**Model:** `gemini-2.5-pro` on Vertex AI, reached through the Agent Development Kit. Optional —
-`AP_REASONING_MODE=offline` is the default and runs the whole loop deterministically.
+**Model:** `gemini-3.1-pro-preview` on Vertex AI, reached through the Agent Development Kit.
+`gemini-2.5-pro` remains a configurable GA fallback. Optional —
+`RACCORD_REASONING_MODE=offline` is the default and runs the whole loop deterministically.
 
 **Given:** the typed incident record — SLO evaluations, probe findings with their confidence and
 abstentions, evidence retrieved through Grafana MCP, change events, ranked hypotheses, the
@@ -176,7 +177,7 @@ as headline metrics, and why verification re-measures rather than trusting a mod
 **Who could be harmed by this system being right in the wrong way?** Viewers, if enablement data
 were used to identify them — addressed by not collecting it ([PRIVACY.md](PRIVACY.md)) — and
 interpreters, describers and captioners, if technical metrics were used as performance
-management. AccessPulse measures *delivery*, and the sign probe's refusal to make semantic
+management. Raccord measures *delivery*, and the sign probe's refusal to make semantic
 claims is the concrete expression of that boundary.
 
 **Automation bias.** The interface separates evidence, hypothesis, policy and verified result

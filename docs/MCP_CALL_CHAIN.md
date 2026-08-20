@@ -1,14 +1,14 @@
 # The Grafana MCP call chain
 
-Every operational fact in an AccessPulse incident arrives through the Grafana MCP server. This
+Every operational fact in an Raccord incident arrives through the Grafana MCP server. This
 document lists each call, why it is made, what comes back, and what would break without it.
 
-Source: [`src/accesspulse/agents/evidence.py`](../src/accesspulse/agents/evidence.py).
+Source: [`src/raccord/agents/evidence.py`](../src/raccord/agents/evidence.py).
 
 ## Capability resolution, not hard-coded tool names
 
 Grafana MCP tool names differ between releases and between the open-source server and the hosted
-Cloud endpoint. AccessPulse therefore asks for a **capability** and resolves it against whatever
+Cloud endpoint. Raccord therefore asks for a **capability** and resolves it against whatever
 the connected server actually advertises:
 
 ```python
@@ -24,14 +24,14 @@ MCPUnavailable: the connected Grafana MCP server does not expose required capabi
 query_tempo_traces (server advertises 41 tools)
 ```
 
-`accesspulse mcp` prints the resolution table for the currently configured transport.
+`raccord mcp` prints the resolution table for the currently configured transport.
 
 ## Transports
 
-| `AP_MCP_TRANSPORT` | What it is | When to use it |
+| `RACCORD_MCP_TRANSPORT` | What it is | When to use it |
 |---|---|---|
 | `stub` (default) | An in-process server implementing the same tool names, argument shapes and response shapes against the local telemetry plane | Reproducible demo, CI, and the 1,000-scenario benchmark — no account, no token, no network |
-| `stdio` | The official `grafana/mcp-grafana` binary or `mcp/grafana` container over stdio, with a Grafana service-account token | Unattended server-side operation |
+| `stdio` | The official `grafana/mcp-grafana` binary or pinned `grafana/mcp-grafana:1.0.0` container over stdio, with a Grafana service-account token | Unattended server-side operation |
 | `http` | The hosted Grafana Cloud MCP endpoint (`https://mcp.grafana.com/mcp`), streamable HTTP with OAuth 2.1 | Interactive operation |
 
 The agent code is identical across all three. Nothing is faked when a real server is present —
@@ -55,7 +55,7 @@ incident** across the 1,000-scenario benchmark:
 { "label_selectors": { "feature": "captions" }, "limit": 50 }
 ```
 
-Returns the accessibility rule group with current state. AccessPulse selects the rule whose
+Returns the accessibility rule group with current state. Raccord selects the rule whose
 `slo` label matches the breached objective. If the server does not index by that label, it falls
 back to the unfiltered list rather than guessing.
 
@@ -65,7 +65,7 @@ group is not provisioned, the investigation stops here with an explicit error.
 ### 2 · `get_alert_rule_by_uid`
 
 ```json
-{ "uid": "accesspulse-cap-drift" }
+{ "uid": "raccord-cap-drift" }
 ```
 
 Returns the objective (`slo_objective: "1.5"`), the query, the labels and the runbook URL.
@@ -76,7 +76,7 @@ compiled into itself.
 ### 3 · `query_prometheus` — the breached SLI
 
 ```json
-{ "expr": "accesspulse_caption_drift_seconds", "start": "...", "end": "...",
+{ "expr": "raccord_caption_drift_seconds", "start": "...", "end": "...",
   "queryType": "range", "aggregation": "max" }
 ```
 
@@ -90,7 +90,7 @@ amount — only the trajectory separates them, and the diagnosis agent classifie
 ### 4 · `query_prometheus` — audience impact
 
 ```json
-{ "expr": "accesspulse_sessions_caption_enabled", "aggregation": "last" }
+{ "expr": "raccord_sessions_caption_enabled", "aggregation": "last" }
 ```
 
 **Why:** severity is not the size of the number, it is the number of people. These are
@@ -147,13 +147,13 @@ Returns the ingest → encode → package → origin → deliver → render span
 ### 9 · `search_dashboards`
 
 ```json
-{ "query": "Incident investigation", "tag": "accesspulse", "limit": 5 }
+{ "query": "Incident investigation", "tag": "raccord", "limit": 5 }
 ```
 
 ### 10 · `generate_deeplink`
 
 ```json
-{ "resourceType": "dashboard", "dashboardUid": "ap-incident",
+{ "resourceType": "dashboard", "dashboardUid": "raccord-incident",
   "timeRange": { "from": "...", "to": "..." },
   "queryParams": { "var-slo": "cap.drift", "var-feature": "captions" } }
 ```
@@ -166,18 +166,18 @@ in the incident workspace as "Open in Grafana for human review".
 
 ```json
 { "title": "...", "severity": "sev2",
-  "labels": { "slo": "cap.drift", "accesspulse_incident": "inc-…" } }
+  "labels": { "slo": "cap.drift", "raccord_incident": "inc-…" } }
 ```
 
 **Why:** the incident exists in Grafana, where the rest of the on-call organisation already
-works — not only inside AccessPulse.
+works — not only inside Raccord.
 
 ### 12 · `add_activity_to_incident`
 
 Writes the approved action onto the Grafana incident timeline:
 
 ```
-AccessPulse inc-e5b89a8337: approved action select_synchronized_standby on
+Raccord inc-e5b89a8337: approved action select_synchronized_standby on
 capenc-pool-b executed by t.duval@studio.example. Scope: DE/ES/FR/GB|ctv-9.3.1/ctv-9.4.0.
 ```
 
@@ -192,9 +192,9 @@ the fact.
 ### 14 · `create_annotation` — recovery
 
 ```json
-{ "text": "AccessPulse: inc-… recovered — accesspulse_caption_drift_seconds back inside
+{ "text": "Raccord: inc-… recovered — raccord_caption_drift_seconds back inside
    objective (worst 0.09)",
-  "tags": ["accesspulse", "recovery", "inc-…"], "dashboardUID": "ap-incident" }
+  "tags": ["raccord", "recovery", "inc-…"], "dashboardUID": "raccord-incident" }
 ```
 
 The annotation lands on the incident dashboard, so the timeline shows the change that caused the
@@ -207,7 +207,7 @@ incident, the approved action, and the recovery, on the same axis as the SLI.
 The chain is not a convention, it is a precondition:
 
 ```python
-# src/accesspulse/incident.py
+# src/raccord/incident.py
 REQUIRED_EVIDENCE_TOOLS = (
     "grafana.mcp:list_alert_rules",
     "grafana.mcp:query_prometheus",
@@ -234,8 +234,8 @@ There is no code path that queries Prometheus, Loki or Tempo directly during an 
 
 Every call is timed, counted, sized and recorded:
 
-- `accesspulse_mcp_call_duration_ms{tool}`
-- `accesspulse_mcp_calls_total{tool,status}`
+- `raccord_mcp_call_duration_ms{tool}`
+- `raccord_mcp_calls_total{tool,status}`
 
 surfaced on the **Agent and MCP observability** dashboard and in the product's own
 *Agent & MCP* tab, alongside the capability resolution table. A typical incident makes 16–17

@@ -9,7 +9,7 @@ territory × platform × player build, every sweep, for the whole event.
 This document measures what the accelerated backends are worth, and how the dispatcher selects
 the right one for each input size.
 
-Reproduce: `python -m accesspulse.probes.accelerated.benchmark --out bench/results/kernels.json`
+Reproduce: `python -m raccord.probes.accelerated.benchmark --out bench/results/kernels.json`
 
 ---
 
@@ -81,7 +81,7 @@ alignment hundreds of thousands of times.
 
 The Triton and CUDA backends implement the same anti-diagonal decomposition and are
 parity-tested against the reference. On an accelerator host,
-`python -m accesspulse.probes.accelerated.benchmark` adds a `triton` column automatically; the
+`python -m raccord.probes.accelerated.benchmark` adds a `triton` column automatically; the
 figures published here are the CPU measurements taken on this build.
 
 ---

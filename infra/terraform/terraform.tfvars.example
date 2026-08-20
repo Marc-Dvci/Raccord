@@ -1,0 +1,25 @@
+# Non-secret deployment inputs. Copy to terraform.tfvars; that destination is ignored.
+project_id = "grafana-506114"
+region     = "europe-west1"
+
+# Dependency-pinned Python 3.12 image verified by Cloud Build on 2026-08-20.
+# The digest is immutable; do not replace it with a moving tag for judging.
+image = "europe-west1-docker.pkg.dev/grafana-506114/raccord/app@sha256:dbde537862ec5613c52edb56c6c2c50d932d60124d06ddf7eddcec191a3ba882"
+
+# From your Grafana Cloud stack. Never put tokens in this file.
+grafana_url                  = "https://REPLACE_WITH_STACK.grafana.net"
+grafana_cloud_otlp_endpoint  = "https://otlp-gateway-REPLACE.grafana.net/otlp"
+grafana_cloud_instance_id    = "REPLACE_WITH_INSTANCE_ID"
+agento11y_endpoint           = "https://REPLACE_WITH_AGENT_OBSERVABILITY_ENDPOINT"
+
+reasoning_mode         = "gemini"
+gemini_model           = "gemini-3.1-pro-preview"
+gemini_location        = "global"
+agent_engine_location  = "us-central1"
+agent_engine_resource  = ""
+public_demo            = true
+min_instances          = 0
+max_instances          = 1
+
+# Add the authenticated gcloud user if it does not already have these rights.
+agent_deployer_principals = []

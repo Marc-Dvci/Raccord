@@ -1,9 +1,9 @@
 {
-  "uid": "ap-incident",
-  "title": "AccessPulse / Incident investigation",
+  "uid": "raccord-incident",
+  "title": "Raccord / Incident investigation",
   "description": "Evidence retrieved through Grafana MCP during an accessibility incident, plus the post-action verification.",
   "tags": [
-    "accesspulse",
+    "raccord",
     "incident",
     "captions"
   ],
@@ -23,14 +23,14 @@
         "type": "query",
         "datasource": {
           "type": "prometheus",
-          "uid": "ap-prom"
+          "uid": "raccord-prom"
         },
         "refresh": 2,
         "includeAll": true,
         "multi": true,
         "label": "Language",
         "query": {
-          "query": "label_values(accesspulse_caption_drift_seconds, language)"
+          "query": "label_values(raccord_caption_drift_seconds, language)"
         }
       },
       {
@@ -38,14 +38,14 @@
         "type": "query",
         "datasource": {
           "type": "prometheus",
-          "uid": "ap-prom"
+          "uid": "raccord-prom"
         },
         "refresh": 2,
         "includeAll": true,
         "multi": true,
         "label": "Territory",
         "query": {
-          "query": "label_values(accesspulse_caption_drift_seconds, territory)"
+          "query": "label_values(raccord_caption_drift_seconds, territory)"
         }
       },
       {
@@ -53,14 +53,14 @@
         "type": "query",
         "datasource": {
           "type": "prometheus",
-          "uid": "ap-prom"
+          "uid": "raccord-prom"
         },
         "refresh": 2,
         "includeAll": true,
         "multi": true,
         "label": "Player build",
         "query": {
-          "query": "label_values(accesspulse_caption_drift_seconds, player_version)"
+          "query": "label_values(raccord_caption_drift_seconds, player_version)"
         }
       }
     ]
@@ -68,7 +68,7 @@
   "annotations": {
     "list": [
       {
-        "name": "AccessPulse actions",
+        "name": "Raccord actions",
         "datasource": {
           "type": "grafana",
           "uid": "-- Grafana --"
@@ -79,7 +79,7 @@
           "type": "tags",
           "matchAny": true,
           "tags": [
-            "accesspulse",
+            "raccord",
             "approved-action",
             "recovery"
           ]
@@ -118,7 +118,7 @@
       },
       "options": {
         "mode": "markdown",
-        "content": "The evidence the AccessPulse agents retrieved through the Grafana MCP server, in the order they retrieved it. Every panel here corresponds to one MCP tool call recorded in the incident audit log."
+        "content": "The evidence the Raccord agents retrieved through the Grafana MCP server, in the order they retrieved it. Every panel here corresponds to one MCP tool call recorded in the incident audit log."
       }
     },
     {
@@ -128,7 +128,7 @@
       "description": "query_prometheus",
       "datasource": {
         "type": "prometheus",
-        "uid": "ap-prom"
+        "uid": "raccord-prom"
       },
       "gridPos": {
         "x": 0,
@@ -139,11 +139,11 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "accesspulse_caption_drift_seconds{language=~\"$language\",territory=~\"$territory\",player_version=~\"$player_version\"}",
+          "expr": "raccord_caption_drift_seconds{language=~\"$language\",territory=~\"$territory\",player_version=~\"$player_version\"}",
           "legendFormat": "{{language}} / {{territory}} / {{player_version}}",
           "datasource": {
             "type": "prometheus",
-            "uid": "ap-prom"
+            "uid": "raccord-prom"
           }
         }
       ],
@@ -195,7 +195,7 @@
       "description": "query_prometheus",
       "datasource": {
         "type": "prometheus",
-        "uid": "ap-prom"
+        "uid": "raccord-prom"
       },
       "gridPos": {
         "x": 12,
@@ -206,11 +206,11 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "accesspulse_sessions_caption_enabled{language=~\"$language\",territory=~\"$territory\",player_version=~\"$player_version\"}",
+          "expr": "raccord_sessions_caption_enabled{language=~\"$language\",territory=~\"$territory\",player_version=~\"$player_version\"}",
           "legendFormat": "{{language}} / {{territory}} / {{player_version}}",
           "datasource": {
             "type": "prometheus",
-            "uid": "ap-prom"
+            "uid": "raccord-prom"
           }
         }
       ],
@@ -257,7 +257,7 @@
       "title": "6. Component logs for the implicated pool",
       "datasource": {
         "type": "loki",
-        "uid": "ap-loki"
+        "uid": "raccord-loki"
       },
       "gridPos": {
         "x": 0,
@@ -271,7 +271,7 @@
           "expr": "{service=~\"capenc-.*|clock-.*\"}",
           "datasource": {
             "type": "loki",
-            "uid": "ap-loki"
+            "uid": "raccord-loki"
           }
         }
       ],
@@ -287,7 +287,7 @@
       "title": "7. Media path trace",
       "datasource": {
         "type": "tempo",
-        "uid": "ap-tempo"
+        "uid": "raccord-tempo"
       },
       "gridPos": {
         "x": 12,
@@ -302,7 +302,7 @@
           "query": "{ .component != \"\" }",
           "datasource": {
             "type": "tempo",
-            "uid": "ap-tempo"
+            "uid": "raccord-tempo"
           }
         }
       ]
@@ -314,7 +314,7 @@
       "description": "Post-action series read back through MCP before the incident may close.",
       "datasource": {
         "type": "prometheus",
-        "uid": "ap-prom"
+        "uid": "raccord-prom"
       },
       "gridPos": {
         "x": 0,
@@ -325,11 +325,11 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "accesspulse_caption_drift_seconds{language=~\"$language\",territory=~\"$territory\",player_version=~\"$player_version\"}",
+          "expr": "raccord_caption_drift_seconds{language=~\"$language\",territory=~\"$territory\",player_version=~\"$player_version\"}",
           "legendFormat": "{{language}} / {{territory}} / {{player_version}}",
           "datasource": {
             "type": "prometheus",
-            "uid": "ap-prom"
+            "uid": "raccord-prom"
           }
         }
       ],
@@ -381,7 +381,7 @@
       "description": "",
       "datasource": {
         "type": "prometheus",
-        "uid": "ap-prom"
+        "uid": "raccord-prom"
       },
       "gridPos": {
         "x": 12,
@@ -392,12 +392,12 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "accesspulse_verification_assertion_status",
+          "expr": "raccord_verification_assertion_status",
           "format": "table",
           "instant": true,
           "datasource": {
             "type": "prometheus",
-            "uid": "ap-prom"
+            "uid": "raccord-prom"
           }
         }
       ],

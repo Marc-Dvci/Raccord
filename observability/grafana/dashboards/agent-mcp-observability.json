@@ -1,9 +1,9 @@
 {
-  "uid": "ap-agent",
-  "title": "AccessPulse / Agent and MCP observability",
-  "description": "Traces, tool selection, latency, token usage and cost for the AccessPulse agents and their Grafana MCP interactions.",
+  "uid": "raccord-agent",
+  "title": "Raccord / Agent and MCP observability",
+  "description": "Traces, tool selection, latency, token usage and cost for the Raccord agents and their Grafana MCP interactions.",
   "tags": [
-    "accesspulse",
+    "raccord",
     "agent",
     "mcp",
     "ai-observability"
@@ -23,7 +23,7 @@
   "annotations": {
     "list": [
       {
-        "name": "AccessPulse actions",
+        "name": "Raccord actions",
         "datasource": {
           "type": "grafana",
           "uid": "-- Grafana --"
@@ -34,7 +34,7 @@
           "type": "tags",
           "matchAny": true,
           "tags": [
-            "accesspulse",
+            "raccord",
             "approved-action",
             "recovery"
           ]
@@ -73,7 +73,7 @@
       },
       "options": {
         "mode": "markdown",
-        "content": "AccessPulse observes the agent it builds. Every agent step is a span, every Grafana MCP tool call is timed and counted, and token usage and cost are tracked per model. This is the panel that proves the investigation actually went through MCP."
+        "content": "Raccord observes the agent it builds. Every agent step is a span, every Grafana MCP tool call is timed and counted, and token usage and cost are tracked per model. This is the panel that proves the investigation actually went through MCP."
       }
     },
     {
@@ -83,7 +83,7 @@
       "description": "",
       "datasource": {
         "type": "prometheus",
-        "uid": "ap-prom"
+        "uid": "raccord-prom"
       },
       "gridPos": {
         "x": 0,
@@ -94,10 +94,10 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(accesspulse_mcp_calls_total)",
+          "expr": "sum(raccord_mcp_calls_total)",
           "datasource": {
             "type": "prometheus",
-            "uid": "ap-prom"
+            "uid": "raccord-prom"
           }
         }
       ],
@@ -137,7 +137,7 @@
       "description": "",
       "datasource": {
         "type": "prometheus",
-        "uid": "ap-prom"
+        "uid": "raccord-prom"
       },
       "gridPos": {
         "x": 6,
@@ -148,10 +148,10 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "max(accesspulse_mcp_call_duration_ms)",
+          "expr": "max(raccord_mcp_call_duration_ms)",
           "datasource": {
             "type": "prometheus",
-            "uid": "ap-prom"
+            "uid": "raccord-prom"
           }
         }
       ],
@@ -191,7 +191,7 @@
       "description": "",
       "datasource": {
         "type": "prometheus",
-        "uid": "ap-prom"
+        "uid": "raccord-prom"
       },
       "gridPos": {
         "x": 12,
@@ -202,10 +202,10 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(accesspulse_mcp_calls_total{status=\"error\"}) or vector(0)",
+          "expr": "sum(raccord_mcp_calls_total{status=\"error\"}) or vector(0)",
           "datasource": {
             "type": "prometheus",
-            "uid": "ap-prom"
+            "uid": "raccord-prom"
           }
         }
       ],
@@ -249,7 +249,7 @@
       "description": "",
       "datasource": {
         "type": "prometheus",
-        "uid": "ap-prom"
+        "uid": "raccord-prom"
       },
       "gridPos": {
         "x": 18,
@@ -260,10 +260,10 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(accesspulse_agent_cost_usd)",
+          "expr": "sum(raccord_agent_cost_usd)",
           "datasource": {
             "type": "prometheus",
-            "uid": "ap-prom"
+            "uid": "raccord-prom"
           }
         }
       ],
@@ -303,7 +303,7 @@
       "description": "",
       "datasource": {
         "type": "prometheus",
-        "uid": "ap-prom"
+        "uid": "raccord-prom"
       },
       "gridPos": {
         "x": 0,
@@ -314,11 +314,11 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "accesspulse_mcp_call_duration_ms",
+          "expr": "raccord_mcp_call_duration_ms",
           "legendFormat": "{{tool}}",
           "datasource": {
             "type": "prometheus",
-            "uid": "ap-prom"
+            "uid": "raccord-prom"
           }
         }
       ],
@@ -366,7 +366,7 @@
       "description": "",
       "datasource": {
         "type": "prometheus",
-        "uid": "ap-prom"
+        "uid": "raccord-prom"
       },
       "gridPos": {
         "x": 12,
@@ -377,11 +377,11 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "accesspulse_agent_step_duration_ms",
+          "expr": "raccord_agent_step_duration_ms",
           "legendFormat": "{{agent}}",
           "datasource": {
             "type": "prometheus",
-            "uid": "ap-prom"
+            "uid": "raccord-prom"
           }
         }
       ],
@@ -428,7 +428,7 @@
       "title": "Agent reasoning trace",
       "datasource": {
         "type": "tempo",
-        "uid": "ap-tempo"
+        "uid": "raccord-tempo"
       },
       "gridPos": {
         "x": 0,
@@ -440,10 +440,10 @@
         {
           "refId": "A",
           "queryType": "traceql",
-          "query": "{ resource.service.name = \"accesspulse-agent\" }",
+          "query": "{ resource.service.name = \"raccord-agent\" }",
           "datasource": {
             "type": "tempo",
-            "uid": "ap-tempo"
+            "uid": "raccord-tempo"
           }
         }
       ]
@@ -455,7 +455,7 @@
       "description": "",
       "datasource": {
         "type": "prometheus",
-        "uid": "ap-prom"
+        "uid": "raccord-prom"
       },
       "gridPos": {
         "x": 12,
@@ -466,11 +466,11 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "accesspulse_agent_tokens_in or accesspulse_agent_tokens_out",
+          "expr": "raccord_agent_tokens_in or raccord_agent_tokens_out",
           "legendFormat": "{{agent}}",
           "datasource": {
             "type": "prometheus",
-            "uid": "ap-prom"
+            "uid": "raccord-prom"
           }
         }
       ],

@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from accesspulse.runtime import AccessPulseRuntime  # noqa: E402
+from raccord.runtime import RaccordRuntime  # noqa: E402
 
 BENCH_SWEEP = dict(
     languages=["en", "fr", "de"],
@@ -20,7 +20,7 @@ BENCH_SWEEP = dict(
 
 @pytest.fixture
 async def runtime():
-    rt = AccessPulseRuntime(db_prefix="test")
+    rt = RaccordRuntime(db_prefix="test")
     await rt.connect()
     yield rt
     await rt.aclose()
@@ -28,6 +28,6 @@ async def runtime():
 
 @pytest.fixture
 def sim():
-    from accesspulse.simulator import MediaSimulator
+    from raccord.simulator import MediaSimulator
 
     return MediaSimulator(seed=1234)

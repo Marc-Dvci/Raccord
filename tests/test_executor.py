@@ -9,8 +9,8 @@ from __future__ import annotations
 
 import pytest
 
-from accesspulse.approvals import ApprovalService
-from accesspulse.contracts import (
+from raccord.approvals import ApprovalService
+from raccord.contracts import (
     ActionType,
     FeatureType,
     Incident,
@@ -22,9 +22,9 @@ from accesspulse.contracts import (
     Scope,
     SLOTier,
 )
-from accesspulse.executor import ExecutionRefused, RemediationExecutor
-from accesspulse.policy import ACTION_CATALOG, POLICY_VERSION, PolicyContext, evaluate
-from accesspulse.simulator import MediaSimulator
+from raccord.executor import ExecutionRefused, RemediationExecutor
+from raccord.policy import ACTION_CATALOG, POLICY_VERSION, PolicyContext, evaluate
+from raccord.simulator import MediaSimulator
 
 
 def _scope(**overrides) -> Scope:
@@ -48,22 +48,33 @@ def _scope(**overrides) -> Scope:
     return Scope(**base)
 
 
-def _action(action_type=ActionType.SELECT_SYNCHRONIZED_STANDBY,
-            target="capenc-pool-b", **kw) -> ProposedAction:
-    return ProposedAction(action_id="act-1", incident_id="inc-1",
-                          action_type=action_type, target=target, **kw)
+def _action(
+    action_type=ActionType.SELECT_SYNCHRONIZED_STANDBY, target="capenc-pool-b", **kw
+) -> ProposedAction:
+    return ProposedAction(
+        action_id="act-1", incident_id="inc-1", action_type=action_type, target=target, **kw
+    )
 
 
 def _incident(action: ProposedAction, decision: PolicyDecision, **kw) -> Incident:
-    return Incident(incident_id="inc-1", event_id="evt-1", title="test",
-                    scope=_scope(), proposed_action=action,
-                    policy_decision=decision, **kw)
+    return Incident(
+        incident_id="inc-1",
+        event_id="evt-1",
+        title="test",
+        scope=_scope(),
+        proposed_action=action,
+        policy_decision=decision,
+        **kw,
+    )
 
 
-def _decide(action: ProposedAction, live: bool = False,
-            tier: SLOTier = SLOTier.TIER_2_VOD_PREMIUM) -> PolicyDecision:
-    return evaluate(action, PolicyContext(tier=tier, live=live, scope=_scope(),
-                                          operator_roles=(Role.STREAMING_SRE,)))
+def _decide(
+    action: ProposedAction, live: bool = False, tier: SLOTier = SLOTier.TIER_2_VOD_PREMIUM
+) -> PolicyDecision:
+    return evaluate(
+        action,
+        PolicyContext(tier=tier, live=live, scope=_scope(), operator_roles=(Role.STREAMING_SRE,)),
+    )
 
 
 @pytest.fixture
@@ -87,9 +98,18 @@ def test_an_uncatalogued_action_is_prohibited_and_refused(executor, monkeypatch)
     decision = _decide(action)
     monkeypatch.delitem(ACTION_CATALOG, ActionType.SELECT_SYNCHRONIZED_STANDBY)
 
-    assert evaluate(action, PolicyContext(
-        tier=SLOTier.TIER_2_VOD_PREMIUM, live=False, scope=_scope(),
-        operator_roles=(Role.STREAMING_SRE,))).classification is PolicyClass.PROHIBITED
+    assert (
+        evaluate(
+            action,
+            PolicyContext(
+                tier=SLOTier.TIER_2_VOD_PREMIUM,
+                live=False,
+                scope=_scope(),
+                operator_roles=(Role.STREAMING_SRE,),
+            ),
+        ).classification
+        is PolicyClass.PROHIBITED
+    )
 
     # The executor re-checks rather than trusting the decision it was handed.
     with pytest.raises(ExecutionRefused, match="not in the catalog"):
@@ -100,9 +120,13 @@ def test_a_target_outside_the_allow_list_is_refused_by_the_executor(executor):
     """Even with a hand-crafted 'automatic' decision, the target is re-checked."""
     action = _action(target="capenc-pool-z")
     forged = PolicyDecision(
-        decision_id="dec-forged", incident_id="inc-1", action_id="act-1",
-        classification=PolicyClass.AUTOMATIC, required_roles=(),
-        rationale=("forged",), policy_version=POLICY_VERSION,
+        decision_id="dec-forged",
+        incident_id="inc-1",
+        action_id="act-1",
+        classification=PolicyClass.AUTOMATIC,
+        required_roles=(),
+        rationale=("forged",),
+        policy_version=POLICY_VERSION,
     )
     with pytest.raises(ExecutionRefused, match="not allow-listed"):
         executor.execute(_incident(action, forged), action)
@@ -187,8 +211,14 @@ def test_rollback_restores_the_recorded_pre_action_state(executor, sim):
     executor.rollback(incident, action)
 
     restored = sim.state_snapshot()
-    for key in ("caption_encoder_pool", "clock_source", "caption_path",
-                "pinned_player_versions", "rerouted_regions", "disabled_feature_flags"):
+    for key in (
+        "caption_encoder_pool",
+        "clock_source",
+        "caption_path",
+        "pinned_player_versions",
+        "rerouted_regions",
+        "disabled_feature_flags",
+    ):
         assert restored[key] == before[key], key
 
 

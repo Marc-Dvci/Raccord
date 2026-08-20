@@ -1,9 +1,9 @@
 {
-  "uid": "ap-quality",
-  "title": "AccessPulse / Probe and model quality",
+  "uid": "raccord-quality",
+  "title": "Raccord / Probe and model quality",
   "description": "Precision, calibration, abstention and cost of the measurement layer itself.",
   "tags": [
-    "accesspulse",
+    "raccord",
     "model",
     "quality"
   ],
@@ -22,7 +22,7 @@
   "annotations": {
     "list": [
       {
-        "name": "AccessPulse actions",
+        "name": "Raccord actions",
         "datasource": {
           "type": "grafana",
           "uid": "-- Grafana --"
@@ -33,7 +33,7 @@
           "type": "tags",
           "matchAny": true,
           "tags": [
-            "accesspulse",
+            "raccord",
             "approved-action",
             "recovery"
           ]
@@ -82,7 +82,7 @@
       "description": "",
       "datasource": {
         "type": "prometheus",
-        "uid": "ap-prom"
+        "uid": "raccord-prom"
       },
       "gridPos": {
         "x": 0,
@@ -93,10 +93,10 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "avg(accesspulse_probe_abstained_ratio)",
+          "expr": "avg(raccord_probe_abstained_ratio)",
           "datasource": {
             "type": "prometheus",
-            "uid": "ap-prom"
+            "uid": "raccord-prom"
           }
         }
       ],
@@ -136,7 +136,7 @@
       "description": "",
       "datasource": {
         "type": "prometheus",
-        "uid": "ap-prom"
+        "uid": "raccord-prom"
       },
       "gridPos": {
         "x": 6,
@@ -147,10 +147,10 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "avg(accesspulse_probe_confidence)",
+          "expr": "avg(raccord_probe_confidence)",
           "datasource": {
             "type": "prometheus",
-            "uid": "ap-prom"
+            "uid": "raccord-prom"
           }
         }
       ],
@@ -190,7 +190,7 @@
       "description": "",
       "datasource": {
         "type": "prometheus",
-        "uid": "ap-prom"
+        "uid": "raccord-prom"
       },
       "gridPos": {
         "x": 12,
@@ -201,10 +201,10 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "max(accesspulse_probe_duration_ms)",
+          "expr": "max(raccord_probe_duration_ms)",
           "datasource": {
             "type": "prometheus",
-            "uid": "ap-prom"
+            "uid": "raccord-prom"
           }
         }
       ],
@@ -244,7 +244,7 @@
       "description": "",
       "datasource": {
         "type": "prometheus",
-        "uid": "ap-prom"
+        "uid": "raccord-prom"
       },
       "gridPos": {
         "x": 18,
@@ -255,10 +255,10 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "max(accesspulse_slices_evaluated)",
+          "expr": "max(raccord_slices_evaluated)",
           "datasource": {
             "type": "prometheus",
-            "uid": "ap-prom"
+            "uid": "raccord-prom"
           }
         }
       ],
@@ -298,7 +298,7 @@
       "description": "",
       "datasource": {
         "type": "prometheus",
-        "uid": "ap-prom"
+        "uid": "raccord-prom"
       },
       "gridPos": {
         "x": 0,
@@ -309,11 +309,11 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "accesspulse_caption_semantic_score",
+          "expr": "raccord_caption_semantic_score",
           "legendFormat": "{{language}} / {{territory}} / {{player_version}}",
           "datasource": {
             "type": "prometheus",
-            "uid": "ap-prom"
+            "uid": "raccord-prom"
           }
         }
       ],
@@ -365,7 +365,7 @@
       "description": "",
       "datasource": {
         "type": "prometheus",
-        "uid": "ap-prom"
+        "uid": "raccord-prom"
       },
       "gridPos": {
         "x": 12,
@@ -376,11 +376,11 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "accesspulse_caption_omission_ratio",
+          "expr": "raccord_caption_omission_ratio",
           "legendFormat": "{{language}} / {{territory}} / {{player_version}}",
           "datasource": {
             "type": "prometheus",
-            "uid": "ap-prom"
+            "uid": "raccord-prom"
           }
         }
       ],
@@ -431,7 +431,7 @@
       "title": "Probe fleet CPU profile",
       "datasource": {
         "type": "grafana-pyroscope-datasource",
-        "uid": "ap-pyro"
+        "uid": "raccord-pyro"
       },
       "gridPos": {
         "x": 0,
@@ -443,10 +443,10 @@
         {
           "refId": "A",
           "profileTypeId": "process_cpu:cpu:nanoseconds",
-          "labelSelector": "{service_name=\"accesspulse-probe-fleet\"}",
+          "labelSelector": "{service_name=\"raccord-probe-fleet\"}",
           "datasource": {
             "type": "grafana-pyroscope-datasource",
-            "uid": "ap-pyro"
+            "uid": "raccord-pyro"
           }
         }
       ]
@@ -457,7 +457,7 @@
       "title": "Agent CPU profile",
       "datasource": {
         "type": "grafana-pyroscope-datasource",
-        "uid": "ap-pyro"
+        "uid": "raccord-pyro"
       },
       "gridPos": {
         "x": 12,
@@ -469,10 +469,10 @@
         {
           "refId": "A",
           "profileTypeId": "process_cpu:cpu:nanoseconds",
-          "labelSelector": "{service_name=\"accesspulse-agent\"}",
+          "labelSelector": "{service_name=\"raccord-agent\"}",
           "datasource": {
             "type": "grafana-pyroscope-datasource",
-            "uid": "ap-pyro"
+            "uid": "raccord-pyro"
           }
         }
       ]

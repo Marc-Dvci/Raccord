@@ -1,10 +1,10 @@
-# AccessPulse
+# Raccord
 
 **Accessible Experience Reliability for live media.**
 A stream is not healthy unless every promised accessibility experience is healthy.
 
 > **Agentic Cinema — Grafana track.**
-> AccessPulse certifies, monitors, diagnoses, repairs and *proves* the accessibility of a live
+> Raccord certifies, monitors, diagnoses, repairs and *proves* the accessibility of a live
 > media experience. It investigates through the **official Grafana MCP server**, reasons with
 > **Gemini on Google Cloud via the Agent Development Kit**, and closes every incident with a
 > re-measurement rather than an opinion.
@@ -29,7 +29,7 @@ moves a conventional availability dashboard. Nobody is paged. The error budget d
 The incident is discovered from social media, an hour later, by which time a live premiere is
 over.
 
-AccessPulse treats captions, audio description, alternate-language audio, sign-language video,
+Raccord treats captions, audio description, alternate-language audio, sign-language video,
 accessible playback controls, accessible authentication and accessible purchase as
 **production services with SLOs, error budgets, owners, incident procedures and proof of
 recovery**.
@@ -60,7 +60,7 @@ on a film nobody watches with description except the people who cannot watch it 
 **This is now a legal obligation, not a courtesy.** The European Accessibility Act has been
 applicable to audiovisual media services since June 2025; the FCC enforces caption-quality
 rules; Ofcom sets access-service quotas. Broadcasters demonstrate compliance today with periodic
-sampling and a spreadsheet. AccessPulse turns it into a continuously measured objective with a
+sampling and a spreadsheet. Raccord turns it into a continuously measured objective with a
 hash-chained evidence trail per incident — the same artifact that satisfies an auditor also
 pages an engineer.
 
@@ -71,15 +71,15 @@ pages an engineer.
 The full demonstration runs **with no credentials, no cloud account and no network**.
 
 ```bash
-git clone <this repo> && cd accesspulse
+git clone https://github.com/Marc-Dvci/Raccord.git && cd Raccord
 python -m venv .venv && . .venv/bin/activate      # Windows: .venv\Scripts\activate
 pip install -e ".[dev]"
 
-accesspulse hero        # the closed loop, in the terminal, ~30 seconds
-accesspulse serve       # the product, at http://localhost:8080
+raccord hero        # the closed loop, in the terminal, ~30 seconds
+raccord serve       # the product, at http://localhost:8080
 ```
 
-`accesspulse hero` injects a documented fault into the digital twin and runs the whole loop,
+`raccord hero` injects a documented fault into the digital twin and runs the whole loop,
 printing the Grafana MCP call chain and the public status update it generated.
 
 Evaluating rather than exploring? **[docs/JUDGE.md](docs/JUDGE.md)** walks the whole system in
@@ -93,13 +93,13 @@ docker compose up -d                    # Grafana, Prometheus, Loki, Tempo, Pyro
 docker compose --profile mcp up -d mcp-grafana    # the official grafana/mcp-grafana server
 
 # .env
-AP_MCP_TRANSPORT=http
-AP_MCP_HTTP_URL=http://localhost:8000/mcp
-AP_EXPORT_TELEMETRY=true                # push probes, logs, spans and annotations into the stack
+RACCORD_MCP_TRANSPORT=http
+RACCORD_MCP_HTTP_URL=http://localhost:8000/mcp
+RACCORD_EXPORT_TELEMETRY=true                # push probes, logs, spans and annotations into the stack
 
 pip install -e ".[cloud]"               # the MCP SDK
-accesspulse serve                       # Prometheus scrapes /metrics; the agent reads via MCP
-open http://localhost:3000              # admin / accesspulse — five provisioned dashboards
+raccord serve                       # Prometheus scrapes /metrics; the agent reads via MCP
+open http://localhost:3000              # admin / raccord — five provisioned dashboards
 ```
 
 Inject a fault and run the loop; every fact now comes from a real Grafana:
@@ -118,16 +118,16 @@ python tools/mcp_conformance.py --transport http --out docs/mcp_conformance.json
 # 65 tools advertised · 18/20 capabilities resolved · 12/12 required
 ```
 
-**The whole closed loop runs against the official `mcp/grafana` server** — every MCP call
+**The whole closed loop runs against the official `grafana/mcp-grafana:1.0.0` server** — every MCP call
 successful, ending `REVIEWED` with 9/9 assertions and scope 1.00/1.00, against a real Grafana
 reading real Prometheus, Loki and Tempo. The alert that opened it was a real Grafana alert rule
 in `firing` state. Artifact: [`docs/real_mcp_run.json`](docs/real_mcp_run.json).
 
-That works because AccessPulse binds to *capabilities*, not tool names. The official server has
+That works because Raccord binds to *capabilities*, not tool names. The official server has
 renamed, consolidated and removed tools over its releases: alert listing and retrieval are now
 one action-dispatch tool, and current open-source builds reach Tempo through the generic
 `grafana_api_request` against Grafana's datasource proxy — still over MCP, still audited.
-`src/accesspulse/grafana_mcp/adapters.py` carries one adapter per deviating tool — argument
+`src/raccord/grafana_mcp/adapters.py` carries one adapter per deviating tool — argument
 translation, discovered datasource UIDs, Grafana-native time formats, response normalisation —
 and 19 tests pin those shapes, so a server-side change surfaces as a named test failure rather
 than a dead investigation. Full measurement:
@@ -137,7 +137,7 @@ than a dead investigation. Full measurement:
 
 ```bash
 # .env
-AP_REASONING_MODE=gemini
+RACCORD_REASONING_MODE=gemini
 GOOGLE_GENAI_USE_VERTEXAI=TRUE
 GOOGLE_CLOUD_PROJECT=<project>
 pip install -e ".[cloud]"
@@ -207,7 +207,7 @@ only route to operational truth**, and the state machine enforces it: the transi
 is a Grafana MCP tool for alerts, metrics, logs, traces *and* dashboards.
 
 ```python
-# src/accesspulse/incident.py
+# src/raccord/incident.py
 REQUIRED_EVIDENCE_TOOLS = (
     "grafana.mcp:list_alert_rules",
     "grafana.mcp:query_prometheus",
@@ -244,7 +244,7 @@ Fourteen mandatory steps, plus conditional calls for trace fallback, incident re
 dashboard annotation — 16.9 calls per incident across the benchmark. Full detail with request
 and response shapes: **[docs/MCP_CALL_CHAIN.md](docs/MCP_CALL_CHAIN.md)**.
 
-Everything AccessPulse learns also *becomes* Grafana data: Prometheus series for every probe
+Everything Raccord learns also *becomes* Grafana data: Prometheus series for every probe
 finding, SLO evaluation and session aggregate; Loki lines from every delivery component; Tempo
 spans for the media path **and for the agent's own reasoning**; Pyroscope profiles for the probe
 fleet. Five dashboards and 31 alert rules are generated from the SLO definitions
@@ -253,14 +253,16 @@ the probes are measured against — CI fails if it does.
 
 ## How Gemini and Google Cloud are load-bearing
 
-Eleven ADK agents run the incident under a twelve-state machine with typed contracts at every
-boundary. **Gemini on Vertex AI** takes the typed incident record and does what a frontier model
+Narrow deterministic specialists run the governed incident workflow under a twelve-state machine
+with typed contracts at every boundary. **Gemini on Vertex AI** takes the typed incident record
+after deterministic diagnosis and does what a frontier model
 is uniquely good at: reading a multimodal picture across metrics, logs, traces, probe findings
 and change events; naming what is uncertain and which evidence would resolve it; and writing six
 audience-specific communications — operator, accessibility specialist, technical director, viewer
 support, executive and public status — each in the right register and reading level. It reaches
-the Grafana MCP tool surface through ADK's `MCPToolset`, so an operator's follow-up question
-pulls fresh evidence through the same governed path.
+the read-only Grafana MCP tool surface through ADK's `McpToolset`, so an operator's follow-up question
+pulls fresh evidence through the same governed path. After verified closure, a separate learning
+skill proposes falsifiable reliability experiments while preserving the deterministic root cause.
 
 **This is agent architecture built to production standards.** The measurement, policy and
 verification arithmetic is typed, tested code, and `RemediationExecutor` accepts only a redeemed,
@@ -269,10 +271,11 @@ separation is what makes an autonomous agent deployable against a live premiere:
 free to reason expansively because the blast radius of a wrong conclusion is a proposal a human
 declines, not an outage. It is also why the unsafe-action rate is 0.000 across 1,000 scenarios.
 
-Google Cloud: Gemini on Vertex AI, ADK for the agent definitions and MCP toolset, Agent Engine
-for the managed runtime (`tools/deploy_agent_engine.py`), Cloud Run for the app, Pub/Sub and
-Dataflow for the event plane, Spanner/BigQuery/Cloud Storage for evidence and analytics, Secret
-Manager and IAM for the security boundary. See **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
+Google Cloud: Gemini on Vertex AI, ADK for the managed reasoning dispatcher and MCP toolset,
+Agent Engine for the reasoning runtime (`tools/deploy_agent_engine.py`), Cloud Run for the app,
+Pub/Sub for de-identified live summaries, BigQuery and immutable Cloud Storage incident evidence,
+and Secret Manager plus IAM for the security boundary. These are provisioned and wired by
+Terraform; none is a slide-only component. See **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
 
 ---
 
@@ -283,7 +286,7 @@ grandmaster failover moves the caption chain onto an NTP fallback, and English c
 connected-TV builds in Western Europe drift progressively to eight seconds behind the dialogue.
 
 ```
-$ accesspulse hero
+$ raccord hero
 baseline healthy: 0 SLOs breaching
 
 ╭─ fault injected ─────────────────────────────────────────────╮
@@ -327,7 +330,7 @@ with a hash-chained audit trail of every state transition.
 1,000 seeded scenarios drawn from a library of 45 documented faults across every accessibility
 feature. The agents never see the fault specification; the harness scores against it.
 
-Run: `accesspulse bench --scenarios 1000` · results: [`bench/results/summary.json`](bench/results/summary.json)
+Run: `raccord bench --scenarios 1000` · results: [`bench/results/summary.json`](bench/results/summary.json)
 · methodology and full numbers: **[docs/BENCHMARK.md](docs/BENCHMARK.md)**.
 
 Published run: 1,000 scenarios, 45 fault types, seed 20260803.
@@ -362,7 +365,7 @@ difficulty stratification and the ablation tables.
 
 ## The product
 
-`accesspulse serve` is an operational product, not a chat window:
+`raccord serve` is an operational product, not a chat window:
 
 - **Overview** — global accessible-experience map, promise registry, error budgets, fault library
 - **Readiness studio** — every preflight assertion with result, evidence, owner and blocker list
@@ -392,7 +395,7 @@ records **zero console errors and zero warnings**. See
 ## Repository map
 
 ```
-src/accesspulse/
+src/raccord/
   contracts.py        typed records for every agent/tool/storage boundary + the state graph
   registry.py         versioned accessibility promise registry (point-in-time reads)
   twin.py             the digital twin: versioned topology graph + blast-radius traversal
@@ -420,9 +423,9 @@ observability/        docker-compose stack config, provisioned datasources, gene
 bench/                the benchmark harness, the probe calibration study, and their results
 tools/                asset generation, accessibility audit, SBOM, MCP conformance,
                       headless-Chrome screenshot + console capture, Agent Engine deployment
-training/             QLoRA specialist adapters: configs, dataset builder, assertion-based eval
 ebpf/                 delivery-path kernel telemetry, correlated to media symptoms
-infra/terraform/      Cloud Run, Secret Manager, evidence bucket — the trust boundary as code
+infra/terraform/      Cloud Run, Agent Engine IAM, Secret Manager, GCS evidence, Pub/Sub and
+                      BigQuery — the trust boundary as code
 docs/                 architecture, MCP chain, benchmark, performance, threat model, privacy,
                       accessibility conformance, model and dataset cards, media rights, ADRs,
                       demo script, judge instructions
@@ -434,8 +437,9 @@ docs/                 architecture, MCP chain, benchmark, performance, threat mo
 |---|---|
 | **[JUDGE.md](docs/JUDGE.md)** | **evaluate the whole system in ten minutes, offline — start here** |
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | the whole system, the trust boundaries, the cloud footprint |
+| [CLOUD_DEPLOYMENT.md](docs/CLOUD_DEPLOYMENT.md) | secure, project-pinned Google Cloud and Grafana Cloud release runbook |
 | [MCP_CALL_CHAIN.md](docs/MCP_CALL_CHAIN.md) | every Grafana MCP call, why it is made, what it returns |
-| [MCP_CONFORMANCE.md](docs/MCP_CONFORMANCE.md) | the official server's tool surface, measured, and how AccessPulse binds to it |
+| [MCP_CONFORMANCE.md](docs/MCP_CONFORMANCE.md) | the official server's tool surface, measured, and how Raccord binds to it |
 | [BENCHMARK.md](docs/BENCHMARK.md) | methodology, results, ablations |
 | [PERFORMANCE.md](docs/PERFORMANCE.md) | the custom alignment kernels, measured — 9.9× at 1024 tokens |
 | [THREAT_MODEL.md](docs/THREAT_MODEL.md) | the security boundary, and what it holds |
@@ -450,10 +454,11 @@ docs/                 architecture, MCP chain, benchmark, performance, threat mo
 
 ## Scope of this release
 
-AccessPulse runs against a high-fidelity digital twin of a live delivery chain, which is what
-makes 1,000 reproducible fault scenarios and exact ground-truth scoring possible. Production
-deployment adds real player-edge probes and a benchmark re-run through the hosted MCP endpoint —
-both are roadmap, not architecture: the interfaces they plug into already exist and are tested.
+Raccord runs against a high-fidelity digital twin of a live delivery chain, which is what
+makes 1,000 reproducible fault scenarios and exact ground-truth scoring possible. The submitted
+cloud path uses the official self-hosted Grafana MCP server behind an authenticated Cloud Run
+gateway; Grafana's interactive hosted-OAuth endpoint is deliberately not used by the unattended
+Agent Engine runtime. Real player-edge probes remain roadmap.
 
 ## Licence
 

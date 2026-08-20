@@ -2,12 +2,12 @@ global:
   scrape_interval: 10s
   evaluation_interval: 10s
   external_labels:
-    stack: accesspulse-local
+    stack: raccord-local
 
 scrape_configs:
-  # The AccessPulse API exposes every probe finding, SLO evaluation, session
+  # The Raccord API exposes every probe finding, SLO evaluation, session
   # aggregate, agent step and MCP call as a Prometheus series.
-  - job_name: accesspulse
+  - job_name: raccord
     metrics_path: /metrics
     static_configs:
       # 8080 is the documented default; 8099 is the fallback the docs suggest
@@ -17,7 +17,7 @@ scrape_configs:
       # simply shows as a down target.
       - targets: ["host.docker.internal:8080", "host.docker.internal:8099"]
         labels:
-          service: accesspulse
+          service: raccord
 
   - job_name: prometheus
     static_configs:

@@ -14,10 +14,10 @@ created it, and under what terms — asset by asset.
 | | |
 |---|---|
 | **Type** | Original short dramatic work: dialogue, scene descriptions, translations |
-| **Created for** | AccessPulse, for the Agentic Cinema contest |
-| **Author** | The AccessPulse project |
+| **Created for** | Raccord, for the Agentic Cinema contest |
+| **Author** | The Raccord project |
 | **Licence** | Apache-2.0 — the same licence as the code |
-| **Location** | `src/accesspulse/media.py` |
+| **Location** | `src/raccord/media.py` |
 | **Third-party content** | **None** |
 
 **What it consists of:**
@@ -51,7 +51,7 @@ performer rights and no releases to obtain.
 | All source code (`src/`, `bench/`, `tools/`, `tests/`) | Written for this project | Apache-2.0 |
 | Grafana dashboards and alert rules (`observability/grafana/`) | **Generated** from the SLO definitions by `tools/generate_grafana_assets.py` | Apache-2.0 |
 | Prometheus, Loki, Tempo, Pyroscope configuration | Written for this project | Apache-2.0 |
-| The web UI (`src/accesspulse/web/`) | Written for this project — no framework, no component library, no CSS toolkit, no bundler | Apache-2.0 |
+| The web UI (`src/raccord/web/`) | Written for this project — no framework, no component library, no CSS toolkit, no bundler | Apache-2.0 |
 | Fonts | **None bundled.** The UI uses the reader's system font stack (`-apple-system, Segoe UI, Roboto, sans-serif`) | n/a |
 | Icons and imagery | **None.** The only glyphs are Unicode characters (`◎ ✓ ✕ ! · ▶`) rendered by the reader's own fonts | n/a |
 | Favicon | An inline SVG data-URI containing one Unicode character, written in the HTML | Apache-2.0 |
@@ -101,12 +101,12 @@ claimed or implied, and no logo of any of them appears in this repository.
 
 ## 6. How the claim is enforced
 
-`MEDIA_MANIFEST` in `src/accesspulse/media.py` declares the provenance in machine-readable form:
+`MEDIA_MANIFEST` in `src/raccord/media.py` declares the provenance in machine-readable form:
 
 ```python
 {
   "title": "The Lumiere Protocol",
-  "origin": "original work created for AccessPulse",
+  "origin": "original work created for Raccord",
   "licence": "Apache-2.0 (same as repository)",
   "third_party_content": "none",
   ...

@@ -11,8 +11,8 @@
 set -euo pipefail
 
 GRAFANA_URL="${GRAFANA_ADMIN_URL:-http://localhost:3000}"
-ADMIN="${GRAFANA_ADMIN:-admin:accesspulse}"
-SA_NAME="${SA_NAME:-accesspulse-mcp}"
+ADMIN="${GRAFANA_ADMIN:-admin:raccord}"
+SA_NAME="${SA_NAME:-raccord-mcp}"
 ENV_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/.env"
 
 api() { curl -sS -u "$ADMIN" -H 'Content-Type: application/json' "$@"; }
@@ -42,8 +42,8 @@ echo "$token"
 
 if [ -f "$ENV_FILE" ]; then
   # Replace the line rather than appending, so repeated runs leave one value.
-  grep -v '^AP_GRAFANA_SERVICE_ACCOUNT_TOKEN=' "$ENV_FILE" > "$ENV_FILE.tmp" || true
+  grep -v '^RACCORD_GRAFANA_SERVICE_ACCOUNT_TOKEN=' "$ENV_FILE" > "$ENV_FILE.tmp" || true
   mv "$ENV_FILE.tmp" "$ENV_FILE"
 fi
-echo "AP_GRAFANA_SERVICE_ACCOUNT_TOKEN=$token" >> "$ENV_FILE"
+echo "RACCORD_GRAFANA_SERVICE_ACCOUNT_TOKEN=$token" >> "$ENV_FILE"
 echo "written to $ENV_FILE" >&2

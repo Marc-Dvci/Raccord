@@ -16,34 +16,34 @@ components:
     kind: encoder
     cgroup_path: /sys/fs/cgroup/media/caption-encoder-a
     config_paths:
-      - /etc/accesspulse/caption-encoder.yaml
-      - /etc/accesspulse/timing.yaml
+      - /etc/raccord/caption-encoder.yaml
+      - /etc/raccord/timing.yaml
 
   - name: capenc-pool-b
     kind: encoder
     cgroup_path: /sys/fs/cgroup/media/caption-encoder-b
     config_paths:
-      - /etc/accesspulse/caption-encoder.yaml
-      - /etc/accesspulse/timing.yaml
+      - /etc/raccord/caption-encoder.yaml
+      - /etc/raccord/timing.yaml
 
   - name: capenc-standby
     kind: encoder
     cgroup_path: /sys/fs/cgroup/media/caption-encoder-standby
     config_paths:
-      - /etc/accesspulse/caption-encoder.yaml
-      - /etc/accesspulse/timing.yaml
+      - /etc/raccord/caption-encoder.yaml
+      - /etc/raccord/timing.yaml
 
   - name: packager-main
     kind: packager
     cgroup_path: /sys/fs/cgroup/media/packager
     config_paths:
-      - /etc/accesspulse/packager.yaml
+      - /etc/raccord/packager.yaml
 
   - name: origin-main
     kind: cdn
     cgroup_path: /sys/fs/cgroup/media/origin
     config_paths:
-      - /etc/accesspulse/origin.yaml
+      - /etc/raccord/origin.yaml
 
   - name: timing-ptp
     kind: timing
@@ -61,10 +61,10 @@ components:
     kind: encoder
     cgroup_path: /sys/fs/cgroup/media/sign-pipeline
     config_paths:
-      - /etc/accesspulse/sign-pipeline.yaml
+      - /etc/raccord/sign-pipeline.yaml
 
   - name: desc-mixer
     kind: encoder
     cgroup_path: /sys/fs/cgroup/media/description-mixer
     config_paths:
-      - /etc/accesspulse/description-mixer.yaml
+      - /etc/raccord/description-mixer.yaml

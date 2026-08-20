@@ -1,4 +1,4 @@
-"""Reproducible benchmark for the AccessPulse closed loop.
+"""Reproducible benchmark for the Raccord closed loop.
 
 Every scenario is a seeded draw from the fault library: inject one documented
 fault into the digital twin, let the event run, then let the full loop run
@@ -6,7 +6,7 @@ without ever showing the agents the ground truth. The harness scores detection,
 scope accuracy, diagnosis, agent behaviour, verification and performance against
 the fault specification it drew from.
 
-    accesspulse bench --scenarios 1000
+    raccord bench --scenarios 1000
     python -m bench.harness --scenarios 200 --workers 4
 
 Ablations re-run the identical corpus with one capability removed, so the
@@ -33,8 +33,8 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from accesspulse.faults import FAULT_LIBRARY  # noqa: E402
-from accesspulse.runtime import AccessPulseRuntime, ScenarioResult  # noqa: E402
+from raccord.faults import FAULT_LIBRARY  # noqa: E402
+from raccord.runtime import RaccordRuntime, ScenarioResult  # noqa: E402
 
 # A narrow but representative slice matrix keeps a 1000-scenario run tractable
 # on a laptop while still covering every language, every affected platform and
@@ -67,12 +67,13 @@ async def run_scenario(
     started = time.perf_counter()
     # Each worker process gets its own SQLite files so parallel runs never share
     # a promise registry or an incident store.
-    rt = AccessPulseRuntime(seed=seed, db_prefix=f"bench_{os.getpid()}")
+    rt = RaccordRuntime(seed=seed, db_prefix=f"bench_{os.getpid()}")
     _apply_ablation(rt, ablation)
     await rt.connect()
 
-    sweep = dict(languages=BENCH_LANGUAGES, territories=BENCH_TERRITORIES,
-                 player_versions=BENCH_PLAYERS)
+    sweep = dict(
+        languages=BENCH_LANGUAGES, territories=BENCH_TERRITORIES, player_versions=BENCH_PLAYERS
+    )
     rt.tick(20, **sweep)
     rt.inject(fault_id)
     for _ in range(ticks):
@@ -85,7 +86,7 @@ async def run_scenario(
     return row
 
 
-def _apply_ablation(rt: AccessPulseRuntime, ablation: dict[str, Any]) -> None:
+def _apply_ablation(rt: RaccordRuntime, ablation: dict[str, Any]) -> None:
     """Remove one capability, leaving everything else identical."""
     if ablation.get("disable_correlation"):
         rt.coordinator.correlation_agent.run = lambda *a, **k: []  # type: ignore[assignment]
@@ -99,9 +100,9 @@ def _apply_ablation(rt: AccessPulseRuntime, ablation: dict[str, Any]) -> None:
         # assurance module would silently leave the verification path - the part
         # that decides whether an incident may close - running the real,
         # abstaining implementation, and the ablation would understate itself.
-        import accesspulse.assurance as assurance_mod
-        import accesspulse.certification as certification_mod
-        import accesspulse.verification as verification_mod
+        import raccord.assurance as assurance_mod
+        import raccord.certification as certification_mod
+        import raccord.verification as verification_mod
 
         real_eval = assurance_mod.evaluate_report
 
@@ -122,14 +123,16 @@ def _apply_ablation(rt: AccessPulseRuntime, ablation: dict[str, Any]) -> None:
 
         def wide(incident, alert, group):
             scope = original(incident, alert, group)
-            from accesspulse.twin import LANGUAGES, PLAYER_VERSIONS, TERRITORIES
+            from raccord.twin import LANGUAGES, PLAYER_VERSIONS, TERRITORIES
 
-            return scope.model_copy(update={
-                "territories": tuple(TERRITORIES),
-                "player_versions": tuple(PLAYER_VERSIONS),
-                "languages": tuple(LANGUAGES),
-                "blast_class": "systemic",
-            })
+            return scope.model_copy(
+                update={
+                    "territories": tuple(TERRITORIES),
+                    "player_versions": tuple(PLAYER_VERSIONS),
+                    "languages": tuple(LANGUAGES),
+                    "blast_class": "systemic",
+                }
+            )
 
         rt.coordinator.scope_agent.run = wide  # type: ignore[assignment]
 
@@ -150,7 +153,8 @@ def _row(result: ScenarioResult, fault_id: str, seed: int, elapsed: float) -> di
         "rolled_back": result.rolled_back,
         "action_taken": result.action_taken,
         "action_is_corrective": result.action_taken in spec.remediation
-        if result.action_taken else False,
+        if result.action_taken
+        else False,
         "mcp_calls": result.mcp_calls,
         "scope_precision": result.scope_precision,
         "scope_recall": result.scope_recall,
@@ -159,9 +163,10 @@ def _row(result: ScenarioResult, fault_id: str, seed: int, elapsed: float) -> di
         "affected_sessions": result.affected_sessions,
         "protected_sessions": result.protected_sessions,
         "unsafe_action": result.unsafe_action,
-        "false_closure": result.recovered and not result.diagnosis_correct
-        and result.assertions_total > 0 and result.assertions_passing
-        < result.assertions_total,
+        "false_closure": result.recovered
+        and not result.diagnosis_correct
+        and result.assertions_total > 0
+        and result.assertions_passing < result.assertions_total,
         "time_to_detect_s": result.time_to_detect_s,
         "time_to_recovery_s": result.time_to_recovery_s,
         "wall_seconds": round(elapsed, 3),
@@ -201,25 +206,42 @@ async def _run_chunk(chunk: list[tuple[str, int]], ablation_name: str) -> list[d
         try:
             out.append(await run_scenario(fault_id, s, ablation))
         except Exception as exc:  # noqa: BLE001 - a crash is a benchmark data point
-            out.append({
-                "fault_id": fault_id, "seed": s, "detected": False,
-                "diagnosis_correct": False, "top3_correct": False, "recovered": False,
-                "rolled_back": False, "unsafe_action": False, "mcp_calls": 0,
-                "scope_precision": 0.0, "scope_recall": 0.0, "assertions_passing": 0,
-                "assertions_total": 0, "top_posterior": 0.0, "affected_sessions": 0,
-                "protected_sessions": 0, "false_closure": False,
-                "time_to_detect_s": 0.0, "time_to_recovery_s": 0.0, "wall_seconds": 0.0,
-                "feature": FAULT_LIBRARY[fault_id].feature.value,
-                "difficulty": FAULT_LIBRARY[fault_id].difficulty,
-                "ground_truth": FAULT_LIBRARY[fault_id].failure_class.value,
-                "action_taken": None, "action_is_corrective": False,
-                "error": f"{type(exc).__name__}: {exc}",
-            })
+            out.append(
+                {
+                    "fault_id": fault_id,
+                    "seed": s,
+                    "detected": False,
+                    "diagnosis_correct": False,
+                    "top3_correct": False,
+                    "recovered": False,
+                    "rolled_back": False,
+                    "unsafe_action": False,
+                    "mcp_calls": 0,
+                    "scope_precision": 0.0,
+                    "scope_recall": 0.0,
+                    "assertions_passing": 0,
+                    "assertions_total": 0,
+                    "top_posterior": 0.0,
+                    "affected_sessions": 0,
+                    "protected_sessions": 0,
+                    "false_closure": False,
+                    "time_to_detect_s": 0.0,
+                    "time_to_recovery_s": 0.0,
+                    "wall_seconds": 0.0,
+                    "feature": FAULT_LIBRARY[fault_id].feature.value,
+                    "difficulty": FAULT_LIBRARY[fault_id].difficulty,
+                    "ground_truth": FAULT_LIBRARY[fault_id].failure_class.value,
+                    "action_taken": None,
+                    "action_is_corrective": False,
+                    "error": f"{type(exc).__name__}: {exc}",
+                }
+            )
     return out
 
 
-async def _run_corpus(corpus: list[tuple[str, int]], ablation_name: str,
-                      workers: int) -> list[dict]:
+async def _run_corpus(
+    corpus: list[tuple[str, int]], ablation_name: str, workers: int
+) -> list[dict]:
     if workers <= 1:
         rows = []
         total = len(corpus)
@@ -227,20 +249,20 @@ async def _run_corpus(corpus: list[tuple[str, int]], ablation_name: str,
             rows.extend(await _run_chunk([(fault_id, s)], ablation_name))
             if i % 25 == 0 or i == total:
                 done = sum(1 for r in rows if r.get("recovered"))
-                print(f"  [{ablation_name}] {i}/{total} scenarios "
-                      f"({done} recovered)", flush=True)
+                print(f"  [{ablation_name}] {i}/{total} scenarios ({done} recovered)", flush=True)
         return rows
 
     size = max(1, math.ceil(len(corpus) / (workers * 4)))
-    chunks = [corpus[i:i + size] for i in range(0, len(corpus), size)]
+    chunks = [corpus[i : i + size] for i in range(0, len(corpus), size)]
     rows: list[dict] = []
     loop = asyncio.get_running_loop()
     with ProcessPoolExecutor(max_workers=workers) as pool:
         futures = [loop.run_in_executor(pool, _worker, c, ablation_name) for c in chunks]
         for i, fut in enumerate(asyncio.as_completed(futures), 1):
             rows.extend(await fut)
-            print(f"  [{ablation_name}] chunk {i}/{len(chunks)} "
-                  f"({len(rows)} scenarios)", flush=True)
+            print(
+                f"  [{ablation_name}] chunk {i}/{len(chunks)} ({len(rows)} scenarios)", flush=True
+            )
     return rows
 
 
@@ -256,8 +278,9 @@ def summarise(rows: list[dict]) -> dict[str, Any]:
     verified = [r for r in rows if r["assertions_total"]]
 
     def mean(key: str, source: Iterable[dict] | None = None) -> float:
-        values = [r[key] for r in (source if source is not None else rows)
-                  if r.get(key) is not None]
+        values = [
+            r[key] for r in (source if source is not None else rows) if r.get(key) is not None
+        ]
         return round(statistics.fmean(values), 4) if values else 0.0
 
     def rate(pred) -> float:
@@ -287,7 +310,8 @@ def summarise(rows: list[dict]) -> dict[str, Any]:
             "top3_accuracy": rate(lambda r: r["top3_correct"]),
             "mean_top_posterior": mean("top_posterior", detected),
             "top1_accuracy_hard_subset": round(
-                sum(1 for r in hard if r["diagnosis_correct"]) / max(1, len(hard)), 4),
+                sum(1 for r in hard if r["diagnosis_correct"]) / max(1, len(hard)), 4
+            ),
             "hard_subset_size": len(hard),
         },
         "scope": {
@@ -298,7 +322,8 @@ def summarise(rows: list[dict]) -> dict[str, Any]:
             "mean_mcp_calls": mean("mcp_calls", detected),
             "max_mcp_calls": max((r["mcp_calls"] for r in rows), default=0),
             "corrective_action_rate": round(
-                sum(1 for r in acted if r["action_is_corrective"]) / max(1, len(acted)), 4),
+                sum(1 for r in acted if r["action_is_corrective"]) / max(1, len(acted)), 4
+            ),
             "unsafe_action_rate": rate(lambda r: r["unsafe_action"]),
             "actions_proposed": len(acted),
         },
@@ -308,8 +333,9 @@ def summarise(rows: list[dict]) -> dict[str, Any]:
             "false_closure_rate": rate(lambda r: r["false_closure"]),
             "mean_assertions_passing": mean("assertions_passing", verified),
             "mean_assertions_total": mean("assertions_total", verified),
-            "mean_time_to_recovery_s": mean("time_to_recovery_s",
-                                            [r for r in rows if r["recovered"]]),
+            "mean_time_to_recovery_s": mean(
+                "time_to_recovery_s", [r for r in rows if r["recovered"]]
+            ),
         },
         "impact": {
             "mean_affected_sessions": mean("affected_sessions", detected),
@@ -351,7 +377,7 @@ def flatten_for_ablation(summary: dict) -> dict:
 
 def ablation_subset(corpus: list[tuple[str, int]]) -> list[tuple[str, int]]:
     """The scenarios every configuration is compared on."""
-    return corpus[:max(40, len(corpus) // 5)]
+    return corpus[: max(40, len(corpus) // 5)]
 
 
 async def _run_ablations(
@@ -402,8 +428,11 @@ async def rerun_ablations(
         raise SystemExit(f"no existing run in {out}; run the full benchmark first")
 
     summary = json.loads(summary_path.read_text(encoding="utf-8"))
-    full_rows = [json.loads(line) for line in rows_path.read_text(encoding="utf-8").splitlines()
-                 if line.strip()]
+    full_rows = [
+        json.loads(line)
+        for line in rows_path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
     corpus = build_corpus(scenarios, seed)
     summary["ablations"] = await _run_ablations(corpus, full_rows, workers)
     summary_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
@@ -422,25 +451,30 @@ async def run_benchmark(
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
     corpus = build_corpus(scenarios, seed)
-    print(f"AccessPulse benchmark: {len(corpus)} scenarios over "
-          f"{len(FAULT_LIBRARY)} fault types, seed {seed}, {workers} worker(s)")
+    print(
+        f"Raccord benchmark: {len(corpus)} scenarios over "
+        f"{len(FAULT_LIBRARY)} fault types, seed {seed}, {workers} worker(s)"
+    )
 
     started = time.perf_counter()
     rows = await _run_corpus(corpus, "full", workers)
     summary = summarise(rows)
-    summary.update({
-        "seed": seed,
-        "fault_types": len(FAULT_LIBRARY),
-        "slice_matrix": {
-            "languages": BENCH_LANGUAGES,
-            "territories": BENCH_TERRITORIES,
-            "player_versions": BENCH_PLAYERS,
-        },
-        "wall_seconds": round(time.perf_counter() - started, 1),
-    })
+    summary.update(
+        {
+            "seed": seed,
+            "fault_types": len(FAULT_LIBRARY),
+            "slice_matrix": {
+                "languages": BENCH_LANGUAGES,
+                "territories": BENCH_TERRITORIES,
+                "player_versions": BENCH_PLAYERS,
+            },
+            "wall_seconds": round(time.perf_counter() - started, 1),
+        }
+    )
 
     (out / "scenarios.jsonl").write_text(
-        "\n".join(json.dumps(r) for r in rows) + "\n", encoding="utf-8")
+        "\n".join(json.dumps(r) for r in rows) + "\n", encoding="utf-8"
+    )
 
     if ablations:
         summary["ablations"] = await _run_ablations(corpus, rows, workers)
@@ -457,10 +491,14 @@ def _print_summary(s: dict) -> None:
     print(f"detection rate            {s['detection']['detection_rate']:.3f}")
     print(f"top-1 root cause          {s['diagnosis']['top1_accuracy']:.3f}")
     print(f"top-3 root cause          {s['diagnosis']['top3_accuracy']:.3f}")
-    print(f"top-1 on hard subset      {s['diagnosis']['top1_accuracy_hard_subset']:.3f} "
-          f"(n={s['diagnosis']['hard_subset_size']})")
-    print(f"scope precision / recall  {s['scope']['mean_precision']:.3f} / "
-          f"{s['scope']['mean_recall']:.3f}")
+    print(
+        f"top-1 on hard subset      {s['diagnosis']['top1_accuracy_hard_subset']:.3f} "
+        f"(n={s['diagnosis']['hard_subset_size']})"
+    )
+    print(
+        f"scope precision / recall  {s['scope']['mean_precision']:.3f} / "
+        f"{s['scope']['mean_recall']:.3f}"
+    )
     print(f"corrective action rate    {s['agent']['corrective_action_rate']:.3f}")
     print(f"recovered and verified    {s['verification']['recovered_rate']:.3f}")
     print(f"rollback rate             {s['verification']['rollback_rate']:.3f}")
@@ -472,25 +510,31 @@ def _print_summary(s: dict) -> None:
     if "ablations" in s:
         print(f"{'configuration':<26}{'detect':>8}{'top-1':>8}{'recover':>9}{'mcp':>7}")
         for name, row in s["ablations"].items():
-            print(f"{name:<26}{row['detection_rate']:>8.3f}{row['top1_accuracy']:>8.3f}"
-                  f"{row['recovered_rate']:>9.3f}{row['mean_mcp_calls']:>7.1f}")
+            print(
+                f"{name:<26}{row['detection_rate']:>8.3f}{row['top1_accuracy']:>8.3f}"
+                f"{row['recovered_rate']:>9.3f}{row['mean_mcp_calls']:>7.1f}"
+            )
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="AccessPulse benchmark")
+    ap = argparse.ArgumentParser(description="Raccord benchmark")
     ap.add_argument("--scenarios", type=int, default=1000)
     ap.add_argument("--seed", type=int, default=20260803)
     ap.add_argument("--workers", type=int, default=1)
     ap.add_argument("--no-ablations", action="store_true")
-    ap.add_argument("--ablations-only", action="store_true",
-                    help="re-run the ablations against the existing full run")
+    ap.add_argument(
+        "--ablations-only",
+        action="store_true",
+        help="re-run the ablations against the existing full run",
+    )
     ap.add_argument("--out", type=Path, default=Path("bench/results"))
     args = ap.parse_args()
     if args.ablations_only:
         asyncio.run(rerun_ablations(args.scenarios, args.seed, args.out, args.workers))
         return 0
-    asyncio.run(run_benchmark(args.scenarios, args.seed, not args.no_ablations,
-                              args.out, args.workers))
+    asyncio.run(
+        run_benchmark(args.scenarios, args.seed, not args.no_ablations, args.out, args.workers)
+    )
     return 0
 
 

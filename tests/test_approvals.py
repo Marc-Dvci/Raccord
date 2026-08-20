@@ -6,8 +6,8 @@ from datetime import timedelta
 
 import pytest
 
-from accesspulse.approvals import ApprovalError, ApprovalService
-from accesspulse.contracts import ActionType, ProposedAction, Role, utcnow
+from raccord.approvals import ApprovalError, ApprovalService
+from raccord.contracts import ActionType, ProposedAction, Role, utcnow
 
 
 def _action(**overrides) -> ProposedAction:
@@ -23,8 +23,9 @@ def _action(**overrides) -> ProposedAction:
 
 
 def _issue(service: ApprovalService, action: ProposedAction, evidence="evhash"):
-    return service.issue(action, evidence, "td@studio.example", Role.TECHNICAL_DIRECTOR,
-                         (Role.TECHNICAL_DIRECTOR,))
+    return service.issue(
+        action, evidence, "td@studio.example", Role.TECHNICAL_DIRECTOR, (Role.TECHNICAL_DIRECTOR,)
+    )
 
 
 def test_valid_token_redeems_once():
@@ -40,8 +41,9 @@ def test_wrong_role_cannot_approve():
     s = ApprovalService()
     a = _action()
     with pytest.raises(ApprovalError, match="requires one of"):
-        s.issue(a, "evhash", "support@studio.example", Role.SUPPORT_LEAD,
-                (Role.TECHNICAL_DIRECTOR,))
+        s.issue(
+            a, "evhash", "support@studio.example", Role.SUPPORT_LEAD, (Role.TECHNICAL_DIRECTOR,)
+        )
 
 
 def test_changing_the_action_after_approval_invalidates_it():

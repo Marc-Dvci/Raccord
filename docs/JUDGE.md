@@ -1,4 +1,4 @@
-# Judge mode — how to evaluate AccessPulse in ten minutes
+# Judge mode — how to evaluate Raccord in ten minutes
 
 **No credentials. No cloud account. No network. No downloads.**
 
@@ -6,27 +6,26 @@
 python -m venv .venv && . .venv/bin/activate      # Windows: .venv\Scripts\activate
 pip install -e ".[dev]"
 
-accesspulse hero          # the closed loop, in the terminal, ~30 seconds
-accesspulse serve         # the product, at http://localhost:8080
+raccord hero          # the closed loop, in the terminal, ~30 seconds
+raccord serve         # the product, at http://localhost:8080
 ```
 
 Or, if you would rather not install anything:
 
 ```bash
-docker build -t accesspulse . && docker run --rm -p 8080:8080 accesspulse
-docker run --rm accesspulse accesspulse hero
+docker build -t raccord . && docker run --rm -p 8080:8080 raccord
+docker run --rm raccord raccord hero
 ```
 
-Everything below runs offline, and every integration — the Grafana MCP server, Gemini, Google
-Cloud — is real and wired at runtime. §6 points the same code at the live ones without a single
-change to the agents.
+Everything below runs offline with contract-compatible local reasoning and MCP adapters. Section 6
+shows the same product on the live Grafana MCP, Gemini, Agent Engine, and Google Cloud path.
 
 ---
 
 ## 1. Two minutes: does the closed loop actually close?
 
 ```bash
-accesspulse hero
+raccord hero
 ```
 
 You should see the Grafana MCP call chain print as it happens, then:
@@ -51,14 +50,14 @@ device builds and one language track on its own. *9/9 assertions* includes three
 French, German and Spanish captions, the described audio and the interpreter feed were not
 regressed by the fix.
 
-Machine-readable, if you prefer: `accesspulse hero --json run.json`.
+Machine-readable, if you prefer: `raccord hero --json run.json`.
 
 ---
 
 ## 2. Three minutes: the product
 
 ```bash
-accesspulse serve      # http://localhost:8080
+raccord serve      # http://localhost:8080
 ```
 
 Seven views. The two worth your time:
@@ -73,11 +72,15 @@ Seven views. The two worth your time:
 Try **Ask the agent**, in the incident workspace. *Why did you rule out a fixed clock offset?*
 gets you the posterior it was actually ranked at and the evidence that argues against it, cited
 back to the Grafana MCP tool that produced each fact. Answers state which plane wrote them; with
-`AP_REASONING_MODE=gemini` a question the retrieved evidence cannot settle sends the agent back
+`RACCORD_REASONING_MODE=gemini` a question the retrieved evidence cannot settle sends the agent back
 through MCP for more, and the new calls appear in the Agent & MCP view.
 
 The UI is keyboard-operable throughout; try it with Tab and arrow keys. It is dependency-free —
 no framework, no CDN, nothing loaded from a third-party host.
+
+For the shortest complete evaluation, choose a fault on Overview and press **Run judge demo**.
+That single server-locked operation resets the shared demo, injects the fault, runs the governed
+recovery, and opens the reviewed incident without another visitor interleaving its state.
 
 ### Deterministic reset
 
@@ -91,8 +94,8 @@ deterministic` asserts it produces an identical state.
 ### A different fault
 
 ```bash
-accesspulse faults                              # all 45
-accesspulse hero --fault infra.stale_config     # the hardest class
+raccord faults                              # all 45
+raccord hero --fault infra.stale_config     # the hardest class
 ```
 
 ---
@@ -105,7 +108,7 @@ This is the question the track exists to ask, so it is answerable in two command
 alerts, metrics, logs, traces *and* dashboards:
 
 ```bash
-grep -A8 "REQUIRED_EVIDENCE_TOOLS" src/accesspulse/incident.py
+grep -A8 "REQUIRED_EVIDENCE_TOOLS" src/raccord/incident.py
 pytest -q tests/test_mcp_and_loop.py -k "without_mcp or only_through_mcp"
 ```
 
@@ -152,14 +155,14 @@ Re-run it yourself:
 
 ```bash
 python -m bench.harness --scenarios 45 --no-ablations --workers 4   # ~3 minutes
-accesspulse bench --scenarios 1000                                   # ~44 minutes on 7 workers
+raccord bench --scenarios 1000                                   # ~44 minutes on 7 workers
 ```
 
 Two more, both fast:
 
 ```bash
 python -m bench.calibration                                    # the measurement models
-python -m accesspulse.probes.accelerated.benchmark             # the alignment kernels
+python -m raccord.probes.accelerated.benchmark             # the alignment kernels
 ```
 
 ---
@@ -190,8 +193,8 @@ dashboards and 31 alert rules:
 
 ```bash
 docker compose up -d
-accesspulse serve                 # Prometheus scrapes /metrics
-open http://localhost:3000        # admin / accesspulse
+raccord serve                 # Prometheus scrapes /metrics
+open http://localhost:3000        # admin / raccord
 ```
 
 **The official Grafana MCP server** instead of the in-process one — no agent code changes.
@@ -204,14 +207,14 @@ docker compose --profile mcp up -d mcp-grafana      # the official grafana/mcp-g
 pip install -e ".[cloud]"                           # the MCP SDK
 
 # .env
-AP_MCP_TRANSPORT=http
-AP_MCP_HTTP_URL=http://localhost:8000/mcp
-AP_EXPORT_TELEMETRY=true      # so the stack has something to be asked about
+RACCORD_MCP_TRANSPORT=http
+RACCORD_MCP_HTTP_URL=http://localhost:8000/mcp
+RACCORD_EXPORT_TELEMETRY=true      # so the stack has something to be asked about
 ```
 
 ```bash
 python tools/mcp_conformance.py --transport http    # 65 tools, 18/20, 12/12 required
-accesspulse serve
+raccord serve
 curl -X POST localhost:8080/api/inject -H 'content-type: application/json' \
      -d '{"fault_id":"cap.progressive_drift","ticks":10,"seconds_per_tick":20}'
 curl -X POST 'localhost:8080/api/incident/run?auto_approve=true'
@@ -232,17 +235,16 @@ real Prometheus, Loki and Tempo. Full measurement in
 ```bash
 pip install -e ".[cloud]"
 # .env
-AP_REASONING_MODE=gemini
+RACCORD_REASONING_MODE=gemini
 GOOGLE_GENAI_USE_VERTEXAI=TRUE
 GOOGLE_CLOUD_PROJECT=<project>
 ```
 
-**Deployment** — Cloud Run plus Agent Engine, with the trust boundary in the Terraform:
+**Deployment** — Cloud Run plus Agent Engine, with the trust boundary in Terraform and a
+machine-verifiable cloud smoke report:
 
-```bash
-python tools/deploy_agent_engine.py --check      # preflight, deploys nothing
-terraform -chdir=infra/terraform plan -var project_id=<project> -var image=<image> -var grafana_url=<url>
-```
+See [CLOUD_DEPLOYMENT.md](CLOUD_DEPLOYMENT.md). Every command is explicitly pinned to
+`grafana-506114`; the runbook never changes the global gcloud project.
 
 ---
 
@@ -268,8 +270,8 @@ terraform -chdir=infra/terraform plan -var project_id=<project> -var image=<imag
 
 | Symptom | Fix |
 |---|---|
-| `accesspulse: command not found` | The editable install puts it on PATH; otherwise `python -m accesspulse.cli hero` |
+| `raccord: command not found` | The editable install puts it on PATH; otherwise `python -m raccord.cli hero` |
 | An incident is already open | `curl -X POST http://localhost:8080/api/reset` |
-| Port 8080 in use | `accesspulse serve --port 8090` |
+| Port 8080 in use | `raccord serve --port 8090` |
 | Approval token expired mid-demo | It is meant to: 300-second TTL. Reset and re-run. |
 | Grafana not running | Everything still works — the in-process MCP server serves the same tool surface |

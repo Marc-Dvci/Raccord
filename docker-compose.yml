@@ -1,19 +1,19 @@
-﻿# AccessPulse local Grafana stack.
+# Raccord local Grafana stack.
 #
 #   docker compose up -d
-#   python -m accesspulse.cli serve
+#   python -m raccord.cli serve
 #
-# Grafana:     http://localhost:3000  (admin / accesspulse)
-# AccessPulse: http://localhost:8080
+# Grafana:     http://localhost:3000  (admin / raccord)
+# Raccord: http://localhost:8080
 #
-# With this stack running, set AP_MCP_TRANSPORT=stdio in .env to route the
+# With this stack running, set RACCORD_MCP_TRANSPORT=stdio in .env to route the
 # agent's investigation through the official grafana/mcp-grafana server against
 # this Grafana instead of the in-process stub. Everything else is unchanged.
 
 services:
   prometheus:
     image: prom/prometheus:v3.1.0
-    container_name: accesspulse-prometheus
+    container_name: raccord-prometheus
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.retention.time=6h
@@ -28,7 +28,7 @@ services:
 
   loki:
     image: grafana/loki:3.3.2
-    container_name: accesspulse-loki
+    container_name: raccord-loki
     command: -config.file=/etc/loki/loki-config.yml
     volumes:
       - ./observability/loki/loki-config.yml:/etc/loki/loki-config.yml:ro
@@ -37,7 +37,7 @@ services:
 
   tempo:
     image: grafana/tempo:2.7.1
-    container_name: accesspulse-tempo
+    container_name: raccord-tempo
     command: -config.file=/etc/tempo/tempo.yml
     volumes:
       - ./observability/tempo/tempo.yml:/etc/tempo/tempo.yml:ro
@@ -48,23 +48,23 @@ services:
 
   pyroscope:
     image: grafana/pyroscope:1.11.0
-    container_name: accesspulse-pyroscope
+    container_name: raccord-pyroscope
     ports:
       - "4040:4040"
 
   grafana:
     image: grafana/grafana:11.5.1
-    container_name: accesspulse-grafana
+    container_name: raccord-grafana
     depends_on: [prometheus, loki, tempo, pyroscope]
     environment:
       GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: accesspulse
+      GF_SECURITY_ADMIN_PASSWORD: raccord
       GF_USERS_DEFAULT_THEME: system
       GF_FEATURE_TOGGLES_ENABLE: traceToProfiles,traceqlEditor
       GF_INSTALL_PLUGINS: ""
       # Deterministic service-account token so `make grafana-token` is not needed
       # for a first run. Rotate before any non-local use.
-      GF_SECURITY_ADMIN_EMAIL: admin@accesspulse.local
+      GF_SECURITY_ADMIN_EMAIL: admin@raccord.local
     volumes:
       - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
@@ -75,17 +75,17 @@ services:
 
   # The official Grafana MCP server. Started on demand:
   #   docker compose --profile mcp up -d mcp-grafana
-  # AccessPulse can also spawn it itself over stdio (AP_MCP_TRANSPORT=stdio).
+  # Raccord can also spawn it itself over stdio (RACCORD_MCP_TRANSPORT=stdio).
   mcp-grafana:
-    image: mcp/grafana:latest
-    container_name: accesspulse-mcp-grafana
+    image: grafana/mcp-grafana:1.0.0
+    container_name: raccord-mcp-grafana
     profiles: ["mcp"]
     depends_on: [grafana]
     environment:
       GRAFANA_URL: http://grafana:3000
-      GRAFANA_SERVICE_ACCOUNT_TOKEN: ${AP_GRAFANA_SERVICE_ACCOUNT_TOKEN:-}
+      GRAFANA_SERVICE_ACCOUNT_TOKEN: ${RACCORD_GRAFANA_SERVICE_ACCOUNT_TOKEN:-}
     # streamable-http, not sse: the MCP Python SDK client in
-    # src/accesspulse/grafana_mcp/client.py speaks streamable-http for the
+    # src/raccord/grafana_mcp/client.py speaks streamable-http for the
     # "http" transport, and an sse server here refuses that handshake.
     # --allowed-hosts is required because the server derives its Host allowlist
     # from --address (0.0.0.0) while the client connects to localhost.

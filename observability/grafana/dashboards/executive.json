@@ -1,9 +1,9 @@
 {
-  "uid": "ap-exec",
-  "title": "AccessPulse / Executive accessibility reliability",
+  "uid": "raccord-exec",
+  "title": "Raccord / Executive accessibility reliability",
   "description": "Accessibility SLO attainment, error budget, protected sessions and restoration performance for the whole event portfolio.",
   "tags": [
-    "accesspulse",
+    "raccord",
     "executive",
     "slo"
   ],
@@ -22,7 +22,7 @@
   "annotations": {
     "list": [
       {
-        "name": "AccessPulse actions",
+        "name": "Raccord actions",
         "datasource": {
           "type": "grafana",
           "uid": "-- Grafana --"
@@ -33,7 +33,7 @@
           "type": "tags",
           "matchAny": true,
           "tags": [
-            "accesspulse",
+            "raccord",
             "approved-action",
             "recovery"
           ]
@@ -82,7 +82,7 @@
       "description": "Share of evaluated SLO/slice pairs inside objective.",
       "datasource": {
         "type": "prometheus",
-        "uid": "ap-prom"
+        "uid": "raccord-prom"
       },
       "gridPos": {
         "x": 0,
@@ -93,10 +93,10 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "1 - avg(accesspulse_slo_breached)",
+          "expr": "1 - avg(raccord_slo_breached)",
           "datasource": {
             "type": "prometheus",
-            "uid": "ap-prom"
+            "uid": "raccord-prom"
           }
         }
       ],
@@ -144,7 +144,7 @@
       "description": "",
       "datasource": {
         "type": "prometheus",
-        "uid": "ap-prom"
+        "uid": "raccord-prom"
       },
       "gridPos": {
         "x": 5,
@@ -155,10 +155,10 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "max(accesspulse_error_budget_consumed_ratio)",
+          "expr": "max(raccord_error_budget_consumed_ratio)",
           "datasource": {
             "type": "prometheus",
-            "uid": "ap-prom"
+            "uid": "raccord-prom"
           }
         }
       ],
@@ -206,7 +206,7 @@
       "description": "",
       "datasource": {
         "type": "prometheus",
-        "uid": "ap-prom"
+        "uid": "raccord-prom"
       },
       "gridPos": {
         "x": 10,
@@ -217,10 +217,10 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(accesspulse_sessions_caption_enabled) + sum(accesspulse_sessions_description_enabled) + sum(accesspulse_sessions_sign_enabled)",
+          "expr": "sum(raccord_sessions_caption_enabled) + sum(raccord_sessions_description_enabled) + sum(raccord_sessions_sign_enabled)",
           "datasource": {
             "type": "prometheus",
-            "uid": "ap-prom"
+            "uid": "raccord-prom"
           }
         }
       ],
@@ -260,7 +260,7 @@
       "description": "",
       "datasource": {
         "type": "prometheus",
-        "uid": "ap-prom"
+        "uid": "raccord-prom"
       },
       "gridPos": {
         "x": 15,
@@ -271,10 +271,10 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "count(accesspulse_slo_breached > 0) or vector(0)",
+          "expr": "count(raccord_slo_breached > 0) or vector(0)",
           "datasource": {
             "type": "prometheus",
-            "uid": "ap-prom"
+            "uid": "raccord-prom"
           }
         }
       ],
@@ -318,7 +318,7 @@
       "description": "",
       "datasource": {
         "type": "prometheus",
-        "uid": "ap-prom"
+        "uid": "raccord-prom"
       },
       "gridPos": {
         "x": 19,
@@ -329,10 +329,10 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "avg(accesspulse_time_to_recovery_seconds)",
+          "expr": "avg(raccord_time_to_recovery_seconds)",
           "datasource": {
             "type": "prometheus",
-            "uid": "ap-prom"
+            "uid": "raccord-prom"
           }
         }
       ],
@@ -380,7 +380,7 @@
       "description": "",
       "datasource": {
         "type": "prometheus",
-        "uid": "ap-prom"
+        "uid": "raccord-prom"
       },
       "gridPos": {
         "x": 0,
@@ -391,11 +391,11 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "accesspulse_error_budget_consumed_ratio",
+          "expr": "raccord_error_budget_consumed_ratio",
           "legendFormat": "{{slo}}",
           "datasource": {
             "type": "prometheus",
-            "uid": "ap-prom"
+            "uid": "raccord-prom"
           }
         }
       ],
@@ -443,7 +443,7 @@
       "description": "Every SLO and audience slice currently outside objective.",
       "datasource": {
         "type": "prometheus",
-        "uid": "ap-prom"
+        "uid": "raccord-prom"
       },
       "gridPos": {
         "x": 12,
@@ -454,12 +454,12 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "accesspulse_slo_breached > 0",
+          "expr": "raccord_slo_breached > 0",
           "format": "table",
           "instant": true,
           "datasource": {
             "type": "prometheus",
-            "uid": "ap-prom"
+            "uid": "raccord-prom"
           }
         }
       ],
@@ -494,7 +494,7 @@
       "description": "k-anonymised aggregates. No individual viewer, no inferred trait, never a disability profile.",
       "datasource": {
         "type": "prometheus",
-        "uid": "ap-prom"
+        "uid": "raccord-prom"
       },
       "gridPos": {
         "x": 0,
@@ -505,11 +505,11 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (territory) (accesspulse_sessions_caption_enabled)",
+          "expr": "sum by (territory) (raccord_sessions_caption_enabled)",
           "legendFormat": "{{territory}}",
           "datasource": {
             "type": "prometheus",
-            "uid": "ap-prom"
+            "uid": "raccord-prom"
           }
         }
       ],
@@ -557,7 +557,7 @@
       "description": "",
       "datasource": {
         "type": "prometheus",
-        "uid": "ap-prom"
+        "uid": "raccord-prom"
       },
       "gridPos": {
         "x": 12,
@@ -568,11 +568,11 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(accesspulse_agent_cost_usd)",
+          "expr": "sum(raccord_agent_cost_usd)",
           "legendFormat": "{{model}}",
           "datasource": {
             "type": "prometheus",
-            "uid": "ap-prom"
+            "uid": "raccord-prom"
           }
         }
       ],

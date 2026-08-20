@@ -186,7 +186,7 @@ escalates to a human with all evidence intact.
 
 ### Policy, approvals, executor
 
-20 rules over typed records, versioned (`accesspulse-policy-2026.08.1`) and stamped onto every
+20 rules over typed records, versioned (`raccord-policy-2026.08.1`) and stamped onto every
 decision so an incident can be re-evaluated under the policy in force. 12 catalogued actions,
 each with preconditions, an allow-listed target set, a required role, an expected metric change,
 a verification suite and rollback behaviour.
@@ -212,15 +212,16 @@ pass are the ones for the broken feature.
 | Plane | Services |
 |---|---|
 | Reasoning | Gemini on Vertex AI; ADK agents and MCP toolset; Agent Engine managed runtime |
-| Application | Cloud Run (app, API, executor, probe control), Global external ALB, Cloud Armor, IAP, Cloud CDN |
-| Event | Pub/Sub (alerts, findings, changes, approvals, actions, verification), Dataflow (streaming normalisation and windowed aggregates), Eventarc |
-| Inference | GKE accelerator pools for streaming feature extraction; Vertex AI Pipelines for training, evaluation and promotion |
-| State | Spanner (incidents, approvals, policy versions, audit), Cloud Storage (evidence, clips, reports, model artefacts), BigQuery (benchmark and reliability analytics), Memorystore |
-| Security | per-agent IAM identities, Secret Manager, VPC Service Controls, workload identity, CMEK, Binary Authorization, centralised audit logging |
+| Application | Cloud Run (app, API, deterministic control plane and probe simulation), one instance while live state is SQLite |
+| Event | Pub/Sub receives de-identified event-level probe and SLO summaries |
+| Evidence | Create-only, versioned Cloud Storage incident bundles; BigQuery aggregate incident outcomes |
+| Observability | Grafana Cloud OTLP plus Agent Observability; official Grafana MCP sidecar behind a token-authenticated Cloud Run gateway; Prometheus, Loki, Tempo and Pyroscope locally |
+| Security | Separate app/reasoning service accounts, least-privilege IAM, Secret Manager write-only secret provisioning; internal ingress in production mode |
 
 The local demonstration runs the reasoning, application and state planes on a laptop with SQLite
 and in-process stores. `tools/deploy_agent_engine.py` deploys the reasoning plane to Agent
-Engine; `Dockerfile` and `deploy/` carry the Cloud Run path.
+Engine; `Dockerfile` and `infra/terraform/` carry the Cloud Run path. The exact deployment and
+credential split are documented in [CLOUD_DEPLOYMENT.md](CLOUD_DEPLOYMENT.md).
 
 ## Trust boundaries
 
@@ -233,11 +234,12 @@ Engine; `Dockerfile` and `deploy/` carry the Cloud Run path.
 5. **Untrusted text → agent reasoning.** Log lines and caption content are data, never
    instructions. See [THREAT_MODEL.md](THREAT_MODEL.md).
 
-## What is scaffolded rather than proven
+## What remains outside the demonstrated scope
 
-Honesty about scope: the local system is complete and runs end to end, but several elements of
-the production architecture are present as code and configuration without hardware to prove them
-here — GPU/TPU inference pools, custom alignment kernels, eBPF delivery telemetry, and QLoRA
-specialist models. Those are documented in [PERFORMANCE.md](PERFORMANCE.md) with what exists,
+The local system is complete and runs end to end. `docs/cloud_smoke_run.json` is generated only
+after a live deployment passes every cloud integration assertion; its absence means the live path
+has not yet been claimed. SQLite live state intentionally limits Cloud Run to one instance; durable shared
+workflow state is the next production step. Optional GPU/TPU inference pools, custom alignment
+kernels, and eBPF delivery telemetry are documented in [PERFORMANCE.md](PERFORMANCE.md) with what exists,
 what it would replace, and what has *not* been measured. Nothing in the benchmark results
 depends on them.

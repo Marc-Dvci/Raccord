@@ -1,13 +1,13 @@
 # Grafana MCP conformance — measured, not assumed
 
-AccessPulse agents never name a Grafana MCP tool. An agent asks for a
+Raccord agents never name a Grafana MCP tool. An agent asks for a
 **capability** ("read the firing alert"); the client resolves that against
 whatever the connected server advertises, translates the call into that server's
 actual schema, and normalises the answer back
 ([ADR 0002](adr/0002-grafana-mcp-is-the-only-route-to-truth.md)).
 
 That indirection exists because the Grafana MCP tool surface is not stable. This
-document records what happened when we pointed AccessPulse at a real one, and it
+document records what happened when we pointed Raccord at a real one, and it
 is regenerated from artifacts rather than written from memory.
 
 Reproduce it:
@@ -23,14 +23,14 @@ python tools/mcp_conformance.py --transport http --out docs/mcp_conformance.json
 
 ## 1. What the official server offers
 
-**Server:** official `mcp/grafana` image, `streamable-http`, against Grafana
+**Server:** official `grafana/mcp-grafana:1.0.0` image, `streamable-http`, against Grafana
 11.5.1 provisioned by this repository's `docker-compose.yml`.
 **Date:** 6 August 2026. **Artifact:** [`mcp_conformance.json`](mcp_conformance.json).
 
 | | |
 |---|---|
 | Tools the server advertises | **65** |
-| Capabilities AccessPulse defines | 20 |
+| Capabilities Raccord defines | 20 |
 | Capabilities resolved | **18** |
 | **Required capabilities resolved** | **12 of 12** |
 
@@ -54,7 +54,7 @@ mechanism working as designed.
 ## 2. Why a name is not enough
 
 The dedicated tools and the dispatch tool take different arguments and answer in
-different shapes. `src/accesspulse/grafana_mcp/adapters.py` holds one adapter per
+different shapes. `src/raccord/grafana_mcp/adapters.py` holds one adapter per
 (capability, tool) pair that deviates from the canonical shape. Things it had to
 reconcile, each found by running it:
 
@@ -116,12 +116,12 @@ annotations.
 
 ### What makes that possible
 
-AccessPulse has to *put* data in the stack before it can read it back through
-MCP. `AP_EXPORT_TELEMETRY=true` pushes probe findings (scraped from `/metrics`),
+Raccord has to *put* data in the stack before it can read it back through
+MCP. `RACCORD_EXPORT_TELEMETRY=true` pushes probe findings (scraped from `/metrics`),
 component logs (Loki push API), media-path spans (OTLP) and change annotations
 (Grafana annotations API) into the stack as the event advances.
 
-That is AccessPulse emitting its own telemetry, not the agent gathering
+That is Raccord emitting its own telemetry, not the agent gathering
 evidence. The agent still learns nothing except through the MCP server. The
 export path also maps the simulated programme clock onto the real one, because
 the event advances faster than wall time and metric, log and trace evidence for

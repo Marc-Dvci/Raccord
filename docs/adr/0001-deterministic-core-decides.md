@@ -4,7 +4,7 @@
 
 ## Context
 
-AccessPulse changes a live broadcast chain during a premiere. The consequences of a wrong change
+Raccord changes a live broadcast chain during a premiere. The consequences of a wrong change
 are borne by the audience that already has the worst experience. At the same time, the raw
 material of an accessibility incident is genuinely multimodal — metrics, logs, traces, probe
 findings across four features, change events — and synthesising that into an explanation a human

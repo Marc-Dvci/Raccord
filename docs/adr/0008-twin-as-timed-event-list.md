@@ -4,7 +4,7 @@
 
 ## Context
 
-AccessPulse needs a delivery chain to break: encoders, packagers, a CDN, players, caption
+Raccord needs a delivery chain to break: encoders, packagers, a CDN, players, caption
 sources, a described-audio track, an interpreter feed. It also needs a *programme* going through
 that chain, because the probes measure the rendered experience against what was actually spoken
 and shown.

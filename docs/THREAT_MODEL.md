@@ -1,6 +1,6 @@
 # Threat model
 
-AccessPulse changes a live broadcast chain. The interesting question is not "can the agent be
+Raccord changes a live broadcast chain. The interesting question is not "can the agent be
 tricked into saying something wrong" — of course it can, models do that — but **what a wrong
 model output is actually able to cause**.
 
@@ -167,10 +167,17 @@ chain (`verify_audit_chain()`), so a removed or edited entry is detectable.
 authentication, because it ships with no credentials and no cloud account. That is a deliberate
 demo-mode property and is stated plainly rather than hidden.
 
-**In a real deployment:** the API sits behind Cloud Run with IAM and IAP; the signing key lives
-in Secret Manager, not on disk; the executor's environment is reachable only from the service
-identity. The action surface an authenticated attacker gains is still exactly the 12 catalogued
-actions, still subject to policy, still requiring a signed approval for anything consequential.
+**In the public judge deployment:** the Cloud Run app is deliberately unauthenticated and is
+restricted to the isolated simulator with demo approvals. The single-instance service serialises
+the one-click judge workflow, and no action can reach real infrastructure. The separate public MCP
+edge requires a high-entropy bearer token, strips it before proxying, and keeps the official server
+and Grafana credential on the instance loopback interface.
+
+**In an operational deployment:** `public_demo=false` moves the API behind Cloud Run IAM/IAP;
+the signing key lives in Secret Manager, not on disk; trusted identity headers are accepted only
+from that boundary. The action surface an authenticated attacker gains is still exactly the 12
+catalogued actions, still subject to policy, still requiring a signed approval for anything
+consequential.
 
 ### 4.11 Denial of service by benchmark or probe load
 
@@ -187,7 +194,7 @@ files per worker process, so it cannot contend with a live event's state.
 | **Can** | Explain the multimodal picture; state what is uncertain and what evidence would resolve it; choose among enumerated hypotheses and catalogued actions; draft six audience-specific communications; pull one more piece of evidence through the governed MCP tool surface in response to an operator question |
 | **Cannot** | Decide that something is broken; compute scope, ranking or the policy result; mint, widen or bypass an approval; execute anything; change the environment; close an incident; read raw audience data; reach any tool outside the MCP toolset it was given |
 
-Offline mode (`AP_REASONING_MODE=offline`, the default) runs the whole loop with a deterministic
+Offline mode (`RACCORD_REASONING_MODE=offline`, the default) runs the whole loop with a deterministic
 reasoning plane. **The closed loop reaches a verified recovery with the language model removed
 entirely.** That is the cleanest statement of how much authority the model has: none.
 
@@ -197,7 +204,7 @@ entirely.** That is the cleanest statement of how much authority the model has: 
 
 | Secret | Local demo | Deployed |
 |---|---|---|
-| Approval HMAC key | Generated on first use into `var/approval_signing.key`, gitignored | Secret Manager, rotated; `AP_APPROVAL_SIGNING_KEY` |
+| Approval HMAC key | Generated on first use into `var/approval_signing.key`, gitignored | Secret Manager, rotated; `RACCORD_APPROVAL_SIGNING_KEY` |
 | Grafana service-account token | Not needed (in-process MCP stub) | Secret Manager, least-privilege service account |
 | Google Cloud credentials | Not needed (offline reasoning) | Workload identity; no keys on disk |
 

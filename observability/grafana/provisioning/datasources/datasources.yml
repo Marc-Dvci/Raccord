@@ -1,8 +1,8 @@
 apiVersion: 1
 
 datasources:
-  - name: AccessPulse Metrics
-    uid: ap-prom
+  - name: Raccord Metrics
+    uid: raccord-prom
     type: prometheus
     access: proxy
     url: http://prometheus:9090
@@ -11,42 +11,42 @@ datasources:
       httpMethod: POST
       exemplarTraceIdDestinations:
         - name: trace_id
-          datasourceUid: ap-tempo
+          datasourceUid: raccord-tempo
 
-  - name: AccessPulse Logs
-    uid: ap-loki
+  - name: Raccord Logs
+    uid: raccord-loki
     type: loki
     access: proxy
     url: http://loki:3100
     jsonData:
       derivedFields:
-        - datasourceUid: ap-tempo
+        - datasourceUid: raccord-tempo
           matcherRegex: 'trace_id=(\w+)'
           name: TraceID
           url: '$${__value.raw}'
 
-  - name: AccessPulse Traces
-    uid: ap-tempo
+  - name: Raccord Traces
+    uid: raccord-tempo
     type: tempo
     access: proxy
     url: http://tempo:3200
     jsonData:
       tracesToLogsV2:
-        datasourceUid: ap-loki
+        datasourceUid: raccord-loki
         spanStartTimeShift: '-2m'
         spanEndTimeShift: '2m'
         filterByTraceID: false
         tags: [{ key: 'component', value: 'service' }]
       tracesToProfiles:
-        datasourceUid: ap-pyro
+        datasourceUid: raccord-pyro
         profileTypeId: 'process_cpu:cpu:nanoseconds'
       serviceMap:
-        datasourceUid: ap-prom
+        datasourceUid: raccord-prom
       nodeGraph:
         enabled: true
 
-  - name: AccessPulse Profiles
-    uid: ap-pyro
+  - name: Raccord Profiles
+    uid: raccord-pyro
     type: grafana-pyroscope-datasource
     access: proxy
     url: http://pyroscope:4040

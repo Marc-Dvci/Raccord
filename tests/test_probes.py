@@ -5,10 +5,10 @@ from __future__ import annotations
 
 import pytest
 
-from accesspulse import probes
-from accesspulse.probes.align import align_tokens, drift_from_alignment
-from accesspulse.probes.text import identify_language, similarity
-from accesspulse.simulator import MediaSimulator
+from raccord import probes
+from raccord.probes.align import align_tokens, drift_from_alignment
+from raccord.probes.text import identify_language, similarity
+from raccord.simulator import MediaSimulator
 
 
 def _obs(sim, language="en", territory="FR", platform="ctv", pv="ctv-9.4.0", window=30.0):
@@ -22,13 +22,26 @@ def test_healthy_slice_breaches_nothing():
         for f in report.findings:
             if f.abstained:
                 continue
-            if f.metric in ("cap.drift", "cap.omission_rate", "cap.wrong_language",
-                            "cap.duplicate", "cap.flicker", "ad.drift",
-                            "sign.frozen", "sign.black", "sign.sync"):
+            if f.metric in (
+                "cap.drift",
+                "cap.omission_rate",
+                "cap.wrong_language",
+                "cap.duplicate",
+                "cap.flicker",
+                "ad.drift",
+                "sign.frozen",
+                "sign.black",
+                "sign.sync",
+            ):
                 assert f.score < 0.5, (f.metric, f.score)
-            if f.metric in ("cap.availability", "cap.render_success", "player.keyboard",
-                            "player.screen_reader", "ad.audio_present",
-                            "sign.availability"):
+            if f.metric in (
+                "cap.availability",
+                "cap.render_success",
+                "player.keyboard",
+                "player.screen_reader",
+                "ad.audio_present",
+                "sign.availability",
+            ):
                 assert f.score >= 0.99, (f.metric, f.score)
 
 
@@ -51,9 +64,9 @@ def test_drift_does_not_leak_to_unaffected_slices():
     sim.inject("cap.progressive_drift")  # scope: en / western europe / CTV
     sim.advance(220)
     for language, territory, platform, pv in (
-        ("en", "US", "ctv", "ctv-9.4.0"),     # outside the territory scope
-        ("fr", "FR", "ctv", "ctv-9.4.0"),     # outside the language scope
-        ("en", "FR", "web", "web-4.12.0"),    # outside the platform scope
+        ("en", "US", "ctv", "ctv-9.4.0"),  # outside the territory scope
+        ("fr", "FR", "ctv", "ctv-9.4.0"),  # outside the language scope
+        ("en", "FR", "web", "web-4.12.0"),  # outside the platform scope
     ):
         report = probes.caption.run(_obs(sim, language, territory, platform, pv), language)
         assert report.value("cap.drift") < 0.5, (language, territory, platform)
@@ -118,6 +131,7 @@ def test_keyboard_trap_fails_the_player_journey():
 
 # --- alignment ------------------------------------------------------------
 
+
 def test_alignment_recovers_a_known_offset():
     tokens = ["the", "projector", "has", "been", "running", "for", "eleven", "hours"]
     times = [float(i) * 0.3 for i in range(len(tokens))]
@@ -137,7 +151,7 @@ def test_alignment_reports_omissions():
 
 
 def test_language_identifier_separates_the_programme_languages():
-    from accesspulse import media
+    from raccord import media
 
     for lang in ("en", "fr", "de", "es"):
         corpus = " ".join(line.text[lang] for line in media.SCRIPT[:4])

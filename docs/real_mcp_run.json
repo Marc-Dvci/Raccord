@@ -1,8 +1,8 @@
 {
   "generated": "2026-08-06T18:21:35+00:00",
-  "what_this_is": "One complete AccessPulse closed loop executed against the official grafana/mcp-grafana server over streamable-HTTP, reading a real Grafana 11.5.1 backed by real Prometheus, Loki and Tempo. Not the in-process server.",
+  "what_this_is": "One complete Raccord closed loop executed against the official grafana/mcp-grafana server over streamable-HTTP, reading a real Grafana 11.5.1 backed by real Prometheus, Loki and Tempo. Not the in-process server.",
   "server": {
-    "image": "mcp/grafana:latest",
+    "image": "grafana/mcp-grafana:1.0.0",
     "transport": "streamable-http",
     "endpoint": "http://localhost:8000/mcp",
     "grafana": "11.5.1",
@@ -178,11 +178,11 @@
     },
     {
       "tool": "grafana.mcp:get_alert_rule_by_uid",
-      "summary": "Rule accesspulse-cap-drift objective: 1.5; query: max by (language, territory, platform, player_version) (accesspulse_caption_drift_seconds) > 1.5"
+      "summary": "Rule raccord-cap-drift objective: 1.5; query: max by (language, territory, platform, player_version) (raccord_caption_drift_seconds) > 1.5"
     },
     {
       "tool": "grafana.mcp:query_prometheus",
-      "summary": "accesspulse_caption_speaker_accuracy_ratio: worst observed 1.0 on de/JP/android/android-6.2.0 across 320 series"
+      "summary": "raccord_caption_speaker_accuracy_ratio: worst observed 1.0 on de/JP/android/android-6.2.0 across 320 series"
     },
     {
       "tool": "grafana.mcp:query_prometheus",
@@ -206,7 +206,7 @@
     },
     {
       "tool": "grafana.mcp:search_dashboards",
-      "summary": "Human review: AccessPulse / Incident investigation"
+      "summary": "Human review: Raccord / Incident investigation"
     },
     {
       "tool": "grafana.mcp:create_incident",
@@ -218,7 +218,7 @@
     },
     {
       "tool": "grafana.mcp:query_prometheus",
-      "summary": "Post-action accesspulse_caption_speaker_accuracy_ratio: worst 1.0 across 320 series"
+      "summary": "Post-action raccord_caption_speaker_accuracy_ratio: worst 1.0 across 320 series"
     },
     {
       "tool": "grafana.mcp:create_annotation",

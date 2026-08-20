@@ -1,18 +1,18 @@
 # Privacy model
 
-AccessPulse measures whether an accessibility feature *worked*. It does not measure, infer,
+Raccord measures whether an accessibility feature *worked*. It does not measure, infer,
 store or transmit anything about who needed it.
 
 That distinction is the whole design. A system that watched individual viewers to find out
 who turns captions on would be building a disability register, and no reliability benefit
-justifies that. So AccessPulse gets its answers from synthetic probes against the delivery
+justifies that. So Raccord gets its answers from synthetic probes against the delivery
 chain, and uses real-user data only in the form of coarse, suppressed, aggregate counts.
 
 ---
 
 ## 1. The non-negotiable rule
 
-> **AccessPulse never infers, records or acts on a person's disability, impairment,
+> **Raccord never infers, records or acts on a person's disability, impairment,
 > assistive-technology use, or identity.**
 
 Concretely, the system does not:
@@ -38,7 +38,7 @@ Feature-enablement is only ever a **count within a slice**, never an attribute o
 | Change events (deployments, config, flags) | Operational metadata | Operator identity only, in an operational context |
 | Session aggregates | Counts per slice, k-anonymised | No — see §3 |
 
-The overwhelming majority of AccessPulse's evidence — everything that drives detection, scope,
+The overwhelming majority of Raccord's evidence — everything that drives detection, scope,
 diagnosis, the policy decision and verification — comes from the first two rows. **The closed
 loop reaches a verified recovery without reading a single real-user record.** Aggregates only
 size the impact after the fact.
@@ -51,7 +51,7 @@ takes it as an input.
 
 ## 3. What a session aggregate is
 
-`SessionAggregate` (`src/accesspulse/contracts.py`) is the only structure in the system derived
+`SessionAggregate` (`src/raccord/contracts.py`) is the only structure in the system derived
 from real viewers, and it is deliberately impoverished:
 
 ```python
@@ -93,7 +93,7 @@ including Grafana and the UI.
 
 ### Suppression is not the only protection
 
-Because AccessPulse never needs a *trend at high resolution* for a minority slice, aggregates
+Because Raccord never needs a *trend at high resolution* for a minority slice, aggregates
 are only ever read at incident timescales for impact sizing. There is no longitudinal per-slice
 store to difference against, which is the usual way k-anonymity is defeated.
 
@@ -101,7 +101,7 @@ store to difference against, which is the usual way k-anonymity is defeated.
 
 ## 4. What reaches Grafana
 
-Every accessibility metric AccessPulse writes to Prometheus is labelled with the operational
+Every accessibility metric Raccord writes to Prometheus is labelled with the operational
 slice — feature, language, territory, platform, player version, event — and nothing else. There
 is no user, session, account or device label anywhere in the metric surface, so no Grafana
 query, dashboard variable, alert rule or MCP call can produce one. Loki lines are delivery-
@@ -137,7 +137,7 @@ an approval is that a named human took responsibility — and it is retained wit
 record. Approvers are staff, not viewers.
 
 **Support contacts.** The aggregate carries a *count* of support contacts per slice. The
-contacts themselves live in whatever support system an operator already runs; AccessPulse never
+contacts themselves live in whatever support system an operator already runs; Raccord never
 ingests their content.
 
 ---
@@ -153,7 +153,7 @@ ingests their content.
 | Model prompts and responses | Traced as spans for observability; contain only the typed record | Debuggability |
 
 In the local demonstration everything lives in SQLite under `var/` and is destroyed by
-`accesspulse` judge reset (`POST /api/reset`).
+`raccord` judge reset (`POST /api/reset`).
 
 ---
 
@@ -163,7 +163,7 @@ This is a demonstration system, not legal advice, but the design maps cleanly on
 obligations that would apply to a real deployment:
 
 - **GDPR Art. 9 (special categories).** Data revealing health — which includes disability — is
-  prohibited absent a specific legal basis. AccessPulse's answer is not to find a basis but to
+  prohibited absent a specific legal basis. Raccord's answer is not to find a basis but to
   never process it: no individual-level accessibility signal is collected, so Art. 9 is not
   engaged by the accessibility measurement path.
 - **Data minimisation (Art. 5(1)(c)).** The evidence that drives the loop is machine telemetry
@@ -189,5 +189,5 @@ For the avoidance of doubt, these are out of scope by design and would not be ad
 - exporting slice-level enablement to any third party.
 
 If an operator needs to know *whether the described-audio track worked in Germany on CTV
-9.4.0*, AccessPulse answers that precisely, from probes, without knowing anything about a single
+9.4.0*, Raccord answers that precisely, from probes, without knowing anything about a single
 German viewer. That is the whole point.

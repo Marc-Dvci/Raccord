@@ -9,7 +9,7 @@ It drives headless Chrome over CDP with no third-party browser-automation
 dependency — `websockets` already arrives with `uvicorn[standard]`, and the
 protocol is a JSON-RPC channel, so a driver is small enough to own.
 
-    accesspulse serve --port 8099                     # in another terminal
+    raccord serve --port 8099                     # in another terminal
     python tools/capture_screenshots.py --base http://localhost:8099
 
 By default it drives the incident first, so the workspace is populated rather
@@ -43,15 +43,17 @@ from pathlib import Path
 try:
     import websockets
 except ModuleNotFoundError:  # pragma: no cover - exercised by the error path
-    print("websockets is required: pip install -e '.[dev]' installs it via uvicorn[standard]",
-          file=sys.stderr)
+    print(
+        "websockets is required: pip install -e '.[dev]' installs it via uvicorn[standard]",
+        file=sys.stderr,
+    )
     raise SystemExit(2) from None
 
 REPO = Path(__file__).resolve().parents[1]
 OUT_DIR = REPO / "docs" / "screenshots"
 
 # The seven views, in the order a judge meets them. The ids are the tab buttons
-# in src/accesspulse/web/index.html; if a tab is renamed this fails loudly rather
+# in src/raccord/web/index.html; if a tab is renamed this fails loudly rather
 # than silently capturing the same view twice.
 VIEWS: list[tuple[str, str, str]] = [
     ("tab-overview", "Overview", "01-overview.png"),
@@ -99,7 +101,9 @@ def post(base: str, path: str, payload: dict | None = None) -> bytes:
     """Drive the product's own API, so the captured state is a real run."""
     data = json.dumps(payload).encode() if payload is not None else b""
     req = urllib.request.Request(
-        f"{base}{path}", data=data, method="POST",
+        f"{base}{path}",
+        data=data,
+        method="POST",
         headers={"content-type": "application/json"},
     )
     with urllib.request.urlopen(req, timeout=180) as r:
@@ -120,7 +124,7 @@ def wait_for_server(base: str, timeout: float = 30.0) -> None:
                     return
         except (urllib.error.URLError, OSError):
             time.sleep(0.5)
-    raise SystemExit(f"no AccessPulse server answering at {base} - start `accesspulse serve` first")
+    raise SystemExit(f"no Raccord server answering at {base} - start `raccord serve` first")
 
 
 class Chrome:
@@ -131,7 +135,7 @@ class Chrome:
         self.width = width
         self.height = height
         self.proc: subprocess.Popen | None = None
-        self.profile = Path(tempfile.mkdtemp(prefix="accesspulse-capture-"))
+        self.profile = Path(tempfile.mkdtemp(prefix="raccord-capture-"))
         self._next_id = 0
         self.console: list[dict] = []
 
@@ -181,8 +185,9 @@ class Chrome:
         shutil.rmtree(self.profile, ignore_errors=True)
 
 
-async def _send(ws, chrome: Chrome, method: str, params: dict | None = None,
-                session: str | None = None) -> dict:
+async def _send(
+    ws, chrome: Chrome, method: str, params: dict | None = None, session: str | None = None
+) -> dict:
     chrome._next_id += 1
     msg_id = chrome._next_id
     msg: dict = {"id": msg_id, "method": method, "params": params or {}}
@@ -212,12 +217,16 @@ def _record_console(chrome: Chrome, raw: dict) -> None:
         )
         chrome.console.append({"source": "console", "level": params["type"], "text": text})
     elif method == "Log.entryAdded" and params.get("entry", {}).get("level") in (
-        "error", "warning",
+        "error",
+        "warning",
     ):
         entry = params["entry"]
         chrome.console.append(
-            {"source": entry.get("source", "log"), "level": entry["level"],
-             "text": entry.get("text", "")}
+            {
+                "source": entry.get("source", "log"),
+                "level": entry["level"],
+                "text": entry.get("text", ""),
+            }
         )
     elif method == "Runtime.exceptionThrown":
         details = params.get("exceptionDetails", {})
@@ -226,14 +235,15 @@ def _record_console(chrome: Chrome, raw: dict) -> None:
         )
 
 
-async def capture(base: str, chrome: Chrome, settle: float,
-                  ask: bool = True) -> list[dict]:
+async def capture(base: str, chrome: Chrome, settle: float, ask: bool = True) -> list[dict]:
     ws_url = chrome.launch()
     shots: list[dict] = []
     async with websockets.connect(ws_url, max_size=200 * 1024 * 1024) as ws:
         target = await _send(ws, chrome, "Target.createTarget", {"url": "about:blank"})
         attached = await _send(
-            ws, chrome, "Target.attachToTarget",
+            ws,
+            chrome,
+            "Target.attachToTarget",
             {"targetId": target["targetId"], "flatten": True},
         )
         sid = attached["sessionId"]
@@ -246,7 +256,9 @@ async def capture(base: str, chrome: Chrome, settle: float,
 
         for tab_id, label, filename in VIEWS:
             clicked = await _send(
-                ws, chrome, "Runtime.evaluate",
+                ws,
+                chrome,
+                "Runtime.evaluate",
                 {
                     "expression": (
                         f"(() => {{ const t = document.getElementById('{tab_id}');"
@@ -265,12 +277,17 @@ async def capture(base: str, chrome: Chrome, settle: float,
             if tab_id == "tab-incident" and ask:
                 for index in range(min(len(ASK_QUESTIONS), 2)):
                     await _send(
-                        ws, chrome, "Runtime.evaluate",
-                        {"expression": (
-                            "(() => { const s = document.getElementById('ask-suggestions');"
-                            f" if (!s || !s.children[{index}]) return 'skip';"
-                            f" s.children[{index}].click(); return 'ok'; }})()"),
-                         "returnByValue": True},
+                        ws,
+                        chrome,
+                        "Runtime.evaluate",
+                        {
+                            "expression": (
+                                "(() => { const s = document.getElementById('ask-suggestions');"
+                                f" if (!s || !s.children[{index}]) return 'skip';"
+                                f" s.children[{index}].click(); return 'ok'; }})()"
+                            ),
+                            "returnByValue": True,
+                        },
                         sid,
                     )
                     await asyncio.sleep(settle + 1.0)
@@ -279,14 +296,15 @@ async def capture(base: str, chrome: Chrome, settle: float,
             # is the point: the incident workspace is the argument, and cropping
             # it to a viewport would hide the audit trail at the bottom.
             shot = await _send(
-                ws, chrome, "Page.captureScreenshot",
+                ws,
+                chrome,
+                "Page.captureScreenshot",
                 {"format": "png", "captureBeyondViewport": True},
                 sid,
             )
             data = base64.b64decode(shot["data"])
             (OUT_DIR / filename).write_bytes(data)
-            shots.append({"tab": tab_id, "label": label, "file": filename,
-                          "bytes": len(data)})
+            shots.append({"tab": tab_id, "label": label, "file": filename, "bytes": len(data)})
             print(f"  {filename:34s} {len(data):>9,} B  {label}")
 
     return shots
@@ -294,18 +312,26 @@ async def capture(base: str, chrome: Chrome, settle: float,
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--base", default="http://localhost:8099",
-                    help="a running `accesspulse serve` (default: %(default)s)")
+    ap.add_argument(
+        "--base",
+        default="http://localhost:8099",
+        help="a running `raccord serve` (default: %(default)s)",
+    )
     ap.add_argument("--chrome", default=None, help="path to the Chrome/Chromium binary")
     ap.add_argument("--width", type=int, default=1600)
     ap.add_argument("--height", type=int, default=1200)
-    ap.add_argument("--settle", type=float, default=1.5,
-                    help="seconds to wait after each tab switch")
+    ap.add_argument(
+        "--settle", type=float, default=1.5, help="seconds to wait after each tab switch"
+    )
     ap.add_argument("--fault", default="cap.progressive_drift")
-    ap.add_argument("--no-run", action="store_true",
-                    help="capture whatever state the server is already in")
-    ap.add_argument("--no-ask", action="store_true",
-                    help="do not populate the Ask panel before capturing the incident view")
+    ap.add_argument(
+        "--no-run", action="store_true", help="capture whatever state the server is already in"
+    )
+    ap.add_argument(
+        "--no-ask",
+        action="store_true",
+        help="do not populate the Ask panel before capturing the incident view",
+    )
     args = ap.parse_args()
 
     base = args.base.rstrip("/")
@@ -314,10 +340,8 @@ def main() -> int:
     if not args.no_run:
         print(f"driving the loop on {base} ...")
         post(base, "/api/reset")
-        post(base, "/api/inject",
-             {"fault_id": args.fault, "ticks": 6, "seconds_per_tick": 20})
+        post(base, "/api/inject", {"fault_id": args.fault, "ticks": 6, "seconds_per_tick": 20})
         post(base, "/api/incident/run?auto_approve=true")
-
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     chrome = Chrome(find_chrome(args.chrome), args.width, args.height)
@@ -328,7 +352,9 @@ def main() -> int:
 
     manifest = {"base": base + "/", "shots": shots, "console_errors": chrome.console}
     (OUT_DIR / "manifest.json").write_text(
-        json.dumps(manifest, indent=2) + "\n", encoding="utf-8", newline="\n",
+        json.dumps(manifest, indent=2) + "\n",
+        encoding="utf-8",
+        newline="\n",
     )
 
     if chrome.console:

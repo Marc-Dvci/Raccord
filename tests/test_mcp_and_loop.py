@@ -4,14 +4,14 @@ from __future__ import annotations
 
 import pytest
 
-from accesspulse.contracts import IncidentState
-from accesspulse.grafana_mcp.client import CAPABILITIES
-from accesspulse.runtime import AccessPulseRuntime
+from raccord.contracts import EvidenceKind, IncidentState
+from raccord.grafana_mcp.client import CAPABILITIES
+from raccord.runtime import RaccordRuntime
 from tests.conftest import BENCH_SWEEP
 
 
-async def _drifting_runtime(fault="cap.progressive_drift") -> AccessPulseRuntime:
-    rt = AccessPulseRuntime(db_prefix="test_loop")
+async def _drifting_runtime(fault="cap.progressive_drift") -> RaccordRuntime:
+    rt = RaccordRuntime(db_prefix="test_loop")
     await rt.connect()
     rt.tick(20, **BENCH_SWEEP)
     rt.inject(fault)
@@ -21,7 +21,7 @@ async def _drifting_runtime(fault="cap.progressive_drift") -> AccessPulseRuntime
 
 
 async def test_every_required_capability_resolves():
-    rt = AccessPulseRuntime(db_prefix="test_mcp")
+    rt = RaccordRuntime(db_prefix="test_mcp")
     await rt.connect()
     for cap in CAPABILITIES:
         if cap.required:
@@ -42,6 +42,13 @@ async def test_hero_incident_closes_with_every_assertion_passing():
     assert result.assertions_passing == result.assertions_total
     assert not result.unsafe_action
     assert rt.coordinator.machine(incident.incident_id).verify_audit_chain()
+    prometheus = [e for e in incident.evidence if e.kind is EvidenceKind.PROM_QUERY]
+    assert prometheus and all(e.payload.get("resultCount", 0) > 0 for e in prometheus)
+    assert any(
+        e.payload.get("resultCount", 0) > 0
+        for e in incident.evidence
+        if e.kind in {EvidenceKind.LOKI_QUERY, EvidenceKind.TEMPO_TRACE}
+    )
     await rt.aclose()
 
 
@@ -66,8 +73,14 @@ async def test_the_investigation_goes_through_mcp_and_only_through_mcp():
     ok, missing = rt.coordinator.evidence_agent.chain_complete()
     assert ok, f"incomplete MCP chain: {missing}"
     called = [c["tool"] for c in rt.mcp.call_log]
-    for required in ("list_alert_rules", "query_prometheus", "query_loki_logs",
-                     "query_tempo_traces", "search_dashboards", "create_annotation"):
+    for required in (
+        "list_alert_rules",
+        "query_prometheus",
+        "query_loki_logs",
+        "query_tempo_traces",
+        "search_dashboards",
+        "create_annotation",
+    ):
         assert required in called, required
     await rt.aclose()
 
@@ -82,8 +95,7 @@ async def test_evidence_complete_is_unreachable_without_mcp_evidence():
 
     machine = rt.coordinator.machine(incident.incident_id)
     incident.state = IncidentState.SCOPED
-    incident.evidence = [e for e in incident.evidence
-                         if "query_prometheus" not in e.source_tool]
+    incident.evidence = [e for e in incident.evidence if "query_prometheus" not in e.source_tool]
     ok, unmet = machine.can(IncidentState.EVIDENCE_COMPLETE)
     assert not ok
     assert any("query_prometheus" in u for u in unmet)
@@ -91,7 +103,7 @@ async def test_evidence_complete_is_unreachable_without_mcp_evidence():
 
 
 async def test_remediation_without_approval_is_refused():
-    from accesspulse.executor import ExecutionRefused
+    from raccord.executor import ExecutionRefused
 
     rt = await _drifting_runtime()
     pairs = rt.coordinator.detect(rt.fault_onset)
@@ -112,7 +124,7 @@ async def test_remediation_without_approval_is_refused():
 async def test_a_wrong_action_is_caught_by_verification_and_rolled_back():
     """The clock fault is not fixed by republishing the manifest. Verification
     must notice, and the incident must not close."""
-    from accesspulse.contracts import ActionType
+    from raccord.contracts import ActionType
 
     rt = await _drifting_runtime()
     pairs = rt.coordinator.detect(rt.fault_onset)
@@ -122,13 +134,17 @@ async def test_a_wrong_action_is_caught_by_verification_and_rolled_back():
     rt.coordinator.diagnose(incident)
     rt.coordinator.evaluate_policy(incident, live=True)
 
-    incident.proposed_action = incident.proposed_action.model_copy(update={
-        "action_type": ActionType.REPUBLISH_MANIFEST,
-        "target": "manifest-main",
-    })
-    incident.policy_decision = incident.policy_decision.model_copy(update={
-        "action_id": incident.proposed_action.action_id,
-    })
+    incident.proposed_action = incident.proposed_action.model_copy(
+        update={
+            "action_type": ActionType.REPUBLISH_MANIFEST,
+            "target": "manifest-main",
+        }
+    )
+    incident.policy_decision = incident.policy_decision.model_copy(
+        update={
+            "action_id": incident.proposed_action.action_id,
+        }
+    )
     decision_roles = incident.policy_decision.required_roles
     rt.coordinator.approve(incident, "td@studio.example", decision_roles[0])
     await rt.coordinator.remediate(incident)
@@ -140,19 +156,41 @@ async def test_a_wrong_action_is_caught_by_verification_and_rolled_back():
 
 
 async def test_reset_is_deterministic():
-    rt = AccessPulseRuntime(db_prefix="test_reset")
+    rt = RaccordRuntime(db_prefix="test_reset")
     await rt.connect()
     before = rt.twin.topology_hash()
     rt.tick(20, **BENCH_SWEEP)
     rt.inject("cap.progressive_drift")
     rt.tick(40, **BENCH_SWEEP)
+    rt.mcp.call_log.append({"tool": "prior-demo-call"})
     rt.reset()
     await rt.connect()
     assert rt.twin.topology_hash() == before
     assert rt.sim.program_s == 0.0
     assert rt.sim.active_faults == []
     assert rt.sim.caption_encoder_pool == "capenc-pool-a"
+    assert rt.mcp.call_log == []
     await rt.aclose()
+
+
+async def test_one_click_judge_demo_is_atomic_and_complete():
+    import raccord.api as api
+
+    api.runtime = RaccordRuntime(db_prefix="test_judge_demo")
+    await api.runtime.connect()
+    try:
+        payload = await api.run_judge_demo(api.DemoRunRequest())
+        assert payload["detected"]
+        assert payload["diagnosis_correct"]
+        assert payload["recovered"]
+        assert payload["assertions"][0] == payload["assertions"][1] > 0
+        assert payload["audit_chain_valid"]
+        assert not payload["unsafe_action"]
+        assert payload["mcp_calls"] > 0
+        assert payload["execution"]["mcp_tools_available"] >= 12
+    finally:
+        await api.runtime.aclose()
+        api.runtime = None
 
 
 async def test_public_status_contains_no_internal_detail():
@@ -161,8 +199,15 @@ async def test_public_status_contains_no_internal_detail():
     public = [c for c in result.incident.communications if c.audience == "public_status"]
     assert public
     body = public[0].body.lower()
-    for leak in ("capenc-pool", "clock-ptp", "signsrc", "packager", "posterior",
-                 "hypothesis", "encoder"):
+    for leak in (
+        "capenc-pool",
+        "clock-ptp",
+        "signsrc",
+        "packager",
+        "posterior",
+        "hypothesis",
+        "encoder",
+    ):
         assert leak not in body, leak
     assert not public[0].contains_internal_detail
     await rt.aclose()

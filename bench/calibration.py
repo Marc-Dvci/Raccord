@@ -36,17 +36,21 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from accesspulse import media  # noqa: E402
-from accesspulse.contracts import FailureClass, FeatureType  # noqa: E402
-from accesspulse.faults import FAULT_LIBRARY, FaultSpec, _scope  # noqa: E402
-from accesspulse.probes import caption, text  # noqa: E402
-from accesspulse.simulator import MediaSimulator  # noqa: E402
+from raccord import media  # noqa: E402
+from raccord.contracts import FailureClass, FeatureType  # noqa: E402
+from raccord.faults import FAULT_LIBRARY, FaultSpec, _scope  # noqa: E402
+from raccord.probes import caption, text  # noqa: E402
+from raccord.simulator import MediaSimulator  # noqa: E402
 
 DRIFT_OFFSETS = (0.5, 1.0, 2.0, 3.0, 4.0, 6.0, 8.0, 12.0)
 DROP_RATES = (0.05, 0.1, 0.2, 0.3, 0.45)
 SEEDS = (11, 23, 37, 41, 53)
-SLICES = (("en", "FR", "ctv", "ctv-9.4.0"), ("fr", "FR", "ctv", "ctv-9.3.1"),
-          ("de", "DE", "web", "web-4.12.0"), ("es", "GB", "ctv", "ctv-9.4.0"))
+SLICES = (
+    ("en", "FR", "ctv", "ctv-9.4.0"),
+    ("fr", "FR", "ctv", "ctv-9.3.1"),
+    ("de", "DE", "web", "web-4.12.0"),
+    ("es", "GB", "ctv", "ctv-9.4.0"),
+)
 WINDOW_S = 30.0
 
 
@@ -57,17 +61,22 @@ def _calibration_fault(fault_id: str, params: dict[str, Any]) -> FaultSpec:
     cannot read the library, so this is still a blind measurement.
     """
     spec = FaultSpec(
-        fault_id, FailureClass.CAPTION_CLOCK_OFFSET, FeatureType.CAPTIONS,
-        "calibration", "synthetic fault used only by the calibration study",
-        "capenc-pool-a", onset="step", params=params,
-        default_scope=_scope(), difficulty=0.5,
+        fault_id,
+        FailureClass.CAPTION_CLOCK_OFFSET,
+        FeatureType.CAPTIONS,
+        "calibration",
+        "synthetic fault used only by the calibration study",
+        "capenc-pool-a",
+        onset="step",
+        params=params,
+        default_scope=_scope(),
+        difficulty=0.5,
     )
     FAULT_LIBRARY[fault_id] = spec
     return spec
 
 
-def _observe_with(params: dict[str, Any], seed: int,
-                  slice_: tuple[str, str, str, str]) -> Any:
+def _observe_with(params: dict[str, Any], seed: int, slice_: tuple[str, str, str, str]) -> Any:
     language, territory, platform, player_version = slice_
     fault_id = f"calib.{'_'.join(f'{k}={v}' for k, v in sorted(params.items()))}"
     _calibration_fault(fault_id, params)
@@ -104,12 +113,16 @@ def study_drift() -> dict[str, Any]:
                 f = report.by_metric("cap.drift")
                 if f is None:
                     continue
-                lo, hi = (f.confidence_interval or (0.0, 0.0))
-                points.append(DriftPoint(
-                    injected=offset, reported=f.score, confidence=f.confidence,
-                    abstained=f.abstained,
-                    covered=min(lo, hi) - 0.35 <= offset <= max(lo, hi) + 0.35,
-                ))
+                lo, hi = f.confidence_interval or (0.0, 0.0)
+                points.append(
+                    DriftPoint(
+                        injected=offset,
+                        reported=f.score,
+                        confidence=f.confidence,
+                        abstained=f.abstained,
+                        covered=min(lo, hi) - 0.35 <= offset <= max(lo, hi) + 0.35,
+                    )
+                )
                 if not f.abstained:
                     errors.append(f.score - offset)
         per_offset[offset] = errors
@@ -122,19 +135,21 @@ def study_drift() -> dict[str, Any]:
         "measured": len(measured),
         "abstained": len(points) - len(measured),
         "mean_absolute_error_s": round(statistics.fmean(abs_errors), 3) if abs_errors else None,
-        "median_absolute_error_s": round(statistics.median(abs_errors), 3)
-        if abs_errors else None,
+        "median_absolute_error_s": round(statistics.median(abs_errors), 3) if abs_errors else None,
         "bias_s": round(statistics.fmean(errors), 3) if errors else None,
         "p95_absolute_error_s": round(sorted(abs_errors)[int(0.95 * (len(abs_errors) - 1))], 3)
-        if abs_errors else None,
+        if abs_errors
+        else None,
         "interval_coverage": round(sum(p.covered for p in measured) / max(1, len(measured)), 3),
         "mean_confidence": round(statistics.fmean([p.confidence for p in measured]), 3)
-        if measured else None,
+        if measured
+        else None,
         "by_injected_offset": {
             str(offset): {
                 "n": len(errs),
                 "mean_absolute_error_s": round(statistics.fmean([abs(e) for e in errs]), 3)
-                if errs else None,
+                if errs
+                else None,
                 "bias_s": round(statistics.fmean(errs), 3) if errs else None,
             }
             for offset, errs in per_offset.items()
@@ -154,13 +169,16 @@ def study_omission() -> dict[str, Any]:
                 if f is None or f.abstained:
                     continue
                 errors.append(f.score - rate)
-        rows.append({
-            "injected": rate,
-            "n": len(errors),
-            "mean_absolute_error": round(statistics.fmean([abs(e) for e in errors]), 4)
-            if errors else None,
-            "bias": round(statistics.fmean(errors), 4) if errors else None,
-        })
+        rows.append(
+            {
+                "injected": rate,
+                "n": len(errors),
+                "mean_absolute_error": round(statistics.fmean([abs(e) for e in errors]), 4)
+                if errors
+                else None,
+                "bias": round(statistics.fmean(errors), 4) if errors else None,
+            }
+        )
     all_errors = [abs(r["bias"]) for r in rows if r["bias"] is not None]
     return {
         "by_injected_drop_rate": rows,
@@ -189,10 +207,12 @@ def study_language() -> dict[str, Any]:
         "samples": total,
         "accuracy": round(correct / max(1, total), 4),
         "mean_confidence": round(statistics.fmean(confidences), 3) if confidences else None,
-        "confusions": {src: {d: c for d, c in sorted(row.items()) if d != src}
-                       for src, row in confusions.items()},
+        "confusions": {
+            src: {d: c for d, c in sorted(row.items()) if d != src}
+            for src, row in confusions.items()
+        },
         "note": "Single dialogue lines. The probe identifies over a whole window of "
-                "cues, which is a much longer string than this.",
+        "cues, which is a much longer string than this.",
     }
 
 
@@ -205,11 +225,13 @@ def study_abstention() -> dict[str, Any]:
             obs = _observe_with({"cue_rate_multiplier": 0.0}, seed, slice_)
             report = caption.run(obs, slice_[0])
             f = report.by_metric("cap.drift")
-            results["no_cues"].append({
-                "abstained": bool(f and f.abstained),
-                "confidence": float(f.confidence) if f else None,
-                "data_quality": f.data_quality if f else None,
-            })
+            results["no_cues"].append(
+                {
+                    "abstained": bool(f and f.abstained),
+                    "confidence": float(f.confidence) if f else None,
+                    "data_quality": f.data_quality if f else None,
+                }
+            )
 
     no_cues = results["no_cues"]
     return {
@@ -217,10 +239,12 @@ def study_abstention() -> dict[str, Any]:
         "abstention_rate": round(sum(r["abstained"] for r in no_cues) / max(1, len(no_cues)), 3),
         "confident_zero_rate": round(
             sum(1 for r in no_cues if not r["abstained"] and (r["confidence"] or 0) > 0.5)
-            / max(1, len(no_cues)), 3),
+            / max(1, len(no_cues)),
+            3,
+        ),
         "note": "confident_zero_rate is the number that matters: a probe reporting "
-                "'0.0 seconds of drift, high confidence' for a window with no captions "
-                "at all would hide a total loss of service.",
+        "'0.0 seconds of drift, high confidence' for a window with no captions "
+        "at all would hide a total loss of service.",
     }
 
 
@@ -245,8 +269,10 @@ def run() -> dict[str, Any]:
 def _print(report: dict[str, Any]) -> None:
     d = report["drift"]
     print("=" * 66)
-    print(f"caption drift estimator ({report['drift']['measured']} measured samples, "
-          f"{d['abstained']} abstentions)")
+    print(
+        f"caption drift estimator ({report['drift']['measured']} measured samples, "
+        f"{d['abstained']} abstentions)"
+    )
     print(f"  mean absolute error      {d['mean_absolute_error_s']} s")
     print(f"  median absolute error    {d['median_absolute_error_s']} s")
     print(f"  bias                     {d['bias_s']} s")
@@ -255,19 +281,22 @@ def _print(report: dict[str, Any]) -> None:
     print(f"  mean reported confidence {d['mean_confidence']}")
     print("\n  injected   n   MAE      bias")
     for offset, row in d["by_injected_offset"].items():
-        print(f"  {offset:>7} s {row['n']:>3}   {row['mean_absolute_error_s']:<8} "
-              f"{row['bias_s']}")
+        print(f"  {offset:>7} s {row['n']:>3}   {row['mean_absolute_error_s']:<8} {row['bias_s']}")
 
     print("\n" + "=" * 66)
     print("caption omission estimator")
     for row in report["omission"]["by_injected_drop_rate"]:
-        print(f"  drop {row['injected']:<5} n={row['n']:<3} "
-              f"MAE {row['mean_absolute_error']} bias {row['bias']}")
+        print(
+            f"  drop {row['injected']:<5} n={row['n']:<3} "
+            f"MAE {row['mean_absolute_error']} bias {row['bias']}"
+        )
 
     lang = report["language_identification"]
     print("\n" + "=" * 66)
-    print(f"language identification: {lang['accuracy']:.3f} over {lang['samples']} lines "
-          f"(mean confidence {lang['mean_confidence']})")
+    print(
+        f"language identification: {lang['accuracy']:.3f} over {lang['samples']} lines "
+        f"(mean confidence {lang['mean_confidence']})"
+    )
     for src, row in lang["confusions"].items():
         if row:
             print(f"  {src} confused with {row}")
@@ -280,7 +309,7 @@ def _print(report: dict[str, Any]) -> None:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="AccessPulse probe calibration study")
+    ap = argparse.ArgumentParser(description="Raccord probe calibration study")
     ap.add_argument("--json", action="store_true")
     ap.add_argument("--out", type=Path, default=None)
     args = ap.parse_args()

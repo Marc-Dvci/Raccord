@@ -4,7 +4,7 @@
 
 ## Context
 
-The AccessPulse operator interface has seven views, live-updating data, tables, an incident
+The Raccord operator interface has seven views, live-updating data, tables, an incident
 workspace and an evidence replay. The default way to build that in 2026 is a component framework
 and a UI library, and it would be faster to write.
 
@@ -44,7 +44,7 @@ updates into live regions.
 ## Consequences
 
 **Good.** 63 automated accessibility checks pass against the actual shipped markup. The UI has
-no supply chain and no upgrade path that can silently regress semantics. `accesspulse serve`
+no supply chain and no upgrade path that can silently regress semantics. `raccord serve`
 starts instantly with no build step, which matters for a judge.
 
 **Costly.** More hand-written code, and no free component behaviour: the tab set's roving

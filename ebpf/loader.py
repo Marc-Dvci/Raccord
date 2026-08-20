@@ -10,17 +10,17 @@ Grafana and the change-correlation agent can use both.
 
 Metrics exported (all labelled by `component` and nothing else):
 
-    accesspulse_ebpf_offcpu_seconds            histogram  encoder descheduling
-    accesspulse_ebpf_tcp_retransmits_total     counter    caption path loss
-    accesspulse_ebpf_clock_adjustments_total   counter    timing reference steps
-    accesspulse_ebpf_config_reopens_total      counter    configuration reloads
-    accesspulse_ebpf_seconds_since_config_read gauge      staleness
+    raccord_ebpf_offcpu_seconds            histogram  encoder descheduling
+    raccord_ebpf_tcp_retransmits_total     counter    caption path loss
+    raccord_ebpf_clock_adjustments_total   counter    timing reference steps
+    raccord_ebpf_config_reopens_total      counter    configuration reloads
+    raccord_ebpf_seconds_since_config_read gauge      staleness
 
 There is no viewer, session, address or payload anywhere in that list, and the
 BPF programs do not read any (docs/PRIVACY.md).
 
 Requires Linux with BTF and a recent libbpf (`pip install bcc` or the bundled
-libbpf-python). AccessPulse never requires it: with the loader absent the
+libbpf-python). Raccord never requires it: with the loader absent the
 diagnosis runs on media evidence alone, which is the configuration the published
 benchmark measures.
 """
@@ -92,28 +92,26 @@ class Exporter:
 
     def render(self, snapshot: dict[str, Any]) -> str:
         lines: list[str] = [
-            "# HELP accesspulse_ebpf_offcpu_seconds Time a delivery component "
+            "# HELP raccord_ebpf_offcpu_seconds Time a delivery component "
             "spent off-CPU, from sched_switch.",
-            "# TYPE accesspulse_ebpf_offcpu_seconds histogram",
+            "# TYPE raccord_ebpf_offcpu_seconds histogram",
         ]
         for name, hist in snapshot.get("offcpu_ns", {}).items():
             cumulative = 0
             total = 0.0
             for slot, count in enumerate(hist):
                 cumulative += count
-                upper = (2 ** slot) / 1e9
+                upper = (2**slot) / 1e9
                 total += count * upper
                 lines.append(
-                    f'accesspulse_ebpf_offcpu_seconds_bucket{{component="{name}",'
+                    f'raccord_ebpf_offcpu_seconds_bucket{{component="{name}",'
                     f'le="{upper:.9f}"}} {cumulative}'
                 )
             lines.append(
-                f'accesspulse_ebpf_offcpu_seconds_bucket{{component="{name}",le="+Inf"}} '
-                f"{cumulative}"
+                f'raccord_ebpf_offcpu_seconds_bucket{{component="{name}",le="+Inf"}} {cumulative}'
             )
-            lines.append(f'accesspulse_ebpf_offcpu_seconds_sum{{component="{name}"}} {total:.6f}')
-            lines.append(f'accesspulse_ebpf_offcpu_seconds_count{{component="{name}"}} '
-                         f"{cumulative}")
+            lines.append(f'raccord_ebpf_offcpu_seconds_sum{{component="{name}"}} {total:.6f}')
+            lines.append(f'raccord_ebpf_offcpu_seconds_count{{component="{name}"}} {cumulative}')
 
         for metric, help_text in (
             ("tcp_retransmits_total", "TCP retransmits on the component's egress."),
@@ -121,18 +119,21 @@ class Exporter:
             ("config_reopens_total", "Configuration file reopens."),
         ):
             key = metric.replace("_total", "")
-            lines.append(f"# HELP accesspulse_ebpf_{metric} {help_text}")
-            lines.append(f"# TYPE accesspulse_ebpf_{metric} counter")
+            lines.append(f"# HELP raccord_ebpf_{metric} {help_text}")
+            lines.append(f"# TYPE raccord_ebpf_{metric} counter")
             for name, value in snapshot.get(key, {}).items():
-                lines.append(f'accesspulse_ebpf_{metric}{{component="{name}"}} {value}')
+                lines.append(f'raccord_ebpf_{metric}{{component="{name}"}} {value}')
 
         now = time.time()
-        lines.append("# HELP accesspulse_ebpf_seconds_since_config_read Seconds since this "
-                     "component last reopened its configuration.")
-        lines.append("# TYPE accesspulse_ebpf_seconds_since_config_read gauge")
+        lines.append(
+            "# HELP raccord_ebpf_seconds_since_config_read Seconds since this "
+            "component last reopened its configuration."
+        )
+        lines.append("# TYPE raccord_ebpf_seconds_since_config_read gauge")
         for name, at in self.last_config_read.items():
-            lines.append(f'accesspulse_ebpf_seconds_since_config_read{{component="{name}"}} '
-                         f"{now - at:.1f}")
+            lines.append(
+                f'raccord_ebpf_seconds_since_config_read{{component="{name}"}} {now - at:.1f}'
+            )
         return "\n".join(lines) + "\n"
 
 
@@ -146,7 +147,7 @@ def attach(components: list[Component]):  # pragma: no cover - requires a kernel
         raise SystemExit(
             "eBPF support is optional and not installed.\n"
             "  Linux with BTF:  pip install bcc\n"
-            "AccessPulse runs without it; infrastructure evidence is simply absent."
+            "Raccord runs without it; infrastructure evidence is simply absent."
         ) from exc
 
     if not BPF_OBJECT.exists():
@@ -165,15 +166,21 @@ def attach(components: list[Component]):  # pragma: no cover - requires a kernel
 
 def read_maps(bpf, components: list[Component]) -> dict[str, Any]:  # pragma: no cover
     by_cgroup = {c.cgroup_id: c.name for c in components}
-    snapshot: dict[str, Any] = {"offcpu_ns": {}, "tcp_retransmits": {},
-                                "clock_adjustments": {}, "config_reopens": {}}
+    snapshot: dict[str, Any] = {
+        "offcpu_ns": {},
+        "tcp_retransmits": {},
+        "clock_adjustments": {},
+        "config_reopens": {},
+    }
     for cgroup, hist in bpf["offcpu_ns"].items():
         name = by_cgroup.get(cgroup.value)
         if name:
             snapshot["offcpu_ns"][name] = [hist.slots[i] for i in range(SLOTS)]
-    for map_name, key in (("retransmits", "tcp_retransmits"),
-                          ("clock_adjustments", "clock_adjustments"),
-                          ("config_reopens", "config_reopens")):
+    for map_name, key in (
+        ("retransmits", "tcp_retransmits"),
+        ("clock_adjustments", "clock_adjustments"),
+        ("config_reopens", "config_reopens"),
+    ):
         for cgroup, count in bpf[map_name].items():
             name = by_cgroup.get(cgroup.value)
             if name:
@@ -182,13 +189,20 @@ def read_maps(bpf, components: list[Component]) -> dict[str, Any]:  # pragma: no
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="AccessPulse eBPF delivery telemetry")
+    ap = argparse.ArgumentParser(description="Raccord eBPF delivery telemetry")
     ap.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
     ap.add_argument("--interval", type=float, default=5.0)
-    ap.add_argument("--out", type=Path, default=Path("var/ebpf_metrics.prom"),
-                    help="textfile-collector path Prometheus scrapes")
-    ap.add_argument("--dry-run", action="store_true",
-                    help="validate the configuration without touching the kernel")
+    ap.add_argument(
+        "--out",
+        type=Path,
+        default=Path("var/ebpf_metrics.prom"),
+        help="textfile-collector path Prometheus scrapes",
+    )
+    ap.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="validate the configuration without touching the kernel",
+    )
     args = ap.parse_args()
 
     components = load_components(args.config)
@@ -205,8 +219,10 @@ def main() -> int:
             "config_reopens": {c.name: 0 for c in components},
         }
         rendered = exporter.render(sample)
-        print(f"\ndry run: exposition renders, {len(rendered.splitlines())} lines, "
-              f"{len(components)} components")
+        print(
+            f"\ndry run: exposition renders, {len(rendered.splitlines())} lines, "
+            f"{len(components)} components"
+        )
         print("no kernel programs loaded")
         return 0
 

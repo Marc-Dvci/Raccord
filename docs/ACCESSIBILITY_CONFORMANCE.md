@@ -1,8 +1,8 @@
-# Accessibility conformance report — the AccessPulse product itself
+# Accessibility conformance report — the Raccord product itself
 
 A product that monitors accessibility and is not itself accessible is self-refuting. This is the
-conformance report for the AccessPulse operator interface (`accesspulse serve`,
-`src/accesspulse/web/`).
+conformance report for the Raccord operator interface (`raccord serve`,
+`src/raccord/web/`).
 
 - **Standard:** WCAG 2.2 Level AA (also the normative reference for EN 301 549 §9 and §11)
 - **Scope:** the whole operator product — Overview, Readiness studio, Live cockpit, Incident
@@ -185,6 +185,6 @@ internal_detail`).
 
 ## 7. Feedback
 
-Accessibility defects in AccessPulse are treated as functional defects, not enhancements. The
+Accessibility defects in Raccord are treated as functional defects, not enhancements. The
 issue tracker is the route; a report that a screen reader cannot operate a control is a bug of
 the same severity as an incident closing without verification.

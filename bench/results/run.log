@@ -1,4 +1,4 @@
-﻿AccessPulse benchmark: 1000 scenarios over 45 fault types, seed 20260803, 6 worker(s)
+Raccord benchmark: 1000 scenarios over 45 fault types, seed 20260803, 6 worker(s)
   [full] chunk 1/24 (42 scenarios)
   [full] chunk 2/24 (84 scenarios)
   [full] chunk 3/24 (126 scenarios)

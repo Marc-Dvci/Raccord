@@ -1,10 +1,10 @@
-"""Static accessibility audit of the AccessPulse product UI.
+"""Static accessibility audit of the Raccord product UI.
 
 A product about accessibility that is not itself accessible is self-refuting, so
 the conformance claims in docs/ACCESSIBILITY_CONFORMANCE.md are re-checked by
 this script rather than asserted once and left to rot. CI runs it.
 
-What it checks, mechanically, against src/accesspulse/web/:
+What it checks, mechanically, against src/raccord/web/:
 
   contrast     every text/background token pair used by the stylesheet, in both
                the light and the dark palette, against WCAG 2.2 1.4.3 (4.5:1 for
@@ -35,7 +35,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-WEB = ROOT / "src" / "accesspulse" / "web"
+WEB = ROOT / "src" / "raccord" / "web"
 
 # Text/background pairs the stylesheet actually renders, as (label, ink, bg,
 # minimum ratio). 4.5 is normal text; 3.0 is large text and component edges.
@@ -75,10 +75,8 @@ def relative_luminance(hex_colour: str) -> float:
     h = hex_colour.lstrip("#")
     if len(h) == 3:
         h = "".join(c * 2 for c in h)
-    r, g, b = (int(h[i:i + 2], 16) / 255 for i in (0, 2, 4))
-    return (0.2126 * _srgb_to_linear(r)
-            + 0.7152 * _srgb_to_linear(g)
-            + 0.0722 * _srgb_to_linear(b))
+    r, g, b = (int(h[i : i + 2], 16) / 255 for i in (0, 2, 4))
+    return 0.2126 * _srgb_to_linear(r) + 0.7152 * _srgb_to_linear(g) + 0.0722 * _srgb_to_linear(b)
 
 
 def contrast_ratio(a: str, b: str) -> float:
@@ -166,8 +164,7 @@ class Audit:
         return [r for r in self.results if not r.ok]
 
 
-def _accessible_name(el: Element, ids_with_text: dict[str, str],
-                     labels_for: dict[str, str]) -> str:
+def _accessible_name(el: Element, ids_with_text: dict[str, str], labels_for: dict[str, str]) -> str:
     if el.attrs.get("aria-label"):
         return el.attrs["aria-label"]
     labelled = el.attrs.get("aria-labelledby")
@@ -189,46 +186,73 @@ def audit_markup(html: str, audit: Audit) -> None:
     els = collector.elements
     by_id = {el.attrs["id"]: el for el in els if el.attrs.get("id")}
     id_text = {i: el.text.strip() or el.attrs.get("aria-label", "") for i, el in by_id.items()}
-    labels_for = {el.attrs["for"]: el.text.strip()
-                  for el in els if el.tag == "label" and el.attrs.get("for")}
+    labels_for = {
+        el.attrs["for"]: el.text.strip() for el in els if el.tag == "label" and el.attrs.get("for")
+    }
 
     # 3.1.1 language of page
     html_el = next((e for e in els if e.tag == "html"), None)
-    audit.add("3.1.1 language", "<html> declares a language",
-              bool(html_el and html_el.attrs.get("lang")),
-              (html_el.attrs.get("lang", "") if html_el else "missing"))
+    audit.add(
+        "3.1.1 language",
+        "<html> declares a language",
+        bool(html_el and html_el.attrs.get("lang")),
+        (html_el.attrs.get("lang", "") if html_el else "missing"),
+    )
 
     # 2.4.1 bypass blocks
     skip = next((e for e in els if "skip-link" in e.attrs.get("class", "")), None)
-    target = (skip.attrs.get("href", "").lstrip("#") if skip else "")
-    audit.add("2.4.1 bypass blocks", "skip link resolves to an existing target",
-              bool(skip and target in by_id), f"#{target}" if skip else "no skip link")
+    target = skip.attrs.get("href", "").lstrip("#") if skip else ""
+    audit.add(
+        "2.4.1 bypass blocks",
+        "skip link resolves to an existing target",
+        bool(skip and target in by_id),
+        f"#{target}" if skip else "no skip link",
+    )
     main = next((e for e in els if e.tag == "main"), None)
-    audit.add("2.4.1 bypass blocks", "skip target is programmatically focusable",
-              bool(main and main.attrs.get("tabindex") == "-1"),
-              main.attrs.get("tabindex", "none") if main else "no <main>")
+    audit.add(
+        "2.4.1 bypass blocks",
+        "skip target is programmatically focusable",
+        bool(main and main.attrs.get("tabindex") == "-1"),
+        main.attrs.get("tabindex", "none") if main else "no <main>",
+    )
 
     # 4.1.2 name, role, value - tab pattern
     tabs = [e for e in els if e.attrs.get("role") == "tab"]
     panels = [e for e in els if e.attrs.get("role") == "tabpanel"]
-    audit.add("4.1.2 tab pattern", "every tab controls an existing panel",
-              bool(tabs) and all(t.attrs.get("aria-controls") in by_id for t in tabs),
-              f"{len(tabs)} tabs")
-    audit.add("4.1.2 tab pattern", "every panel is labelled by an existing tab",
-              bool(panels) and all(p.attrs.get("aria-labelledby") in by_id for p in panels),
-              f"{len(panels)} panels")
+    audit.add(
+        "4.1.2 tab pattern",
+        "every tab controls an existing panel",
+        bool(tabs) and all(t.attrs.get("aria-controls") in by_id for t in tabs),
+        f"{len(tabs)} tabs",
+    )
+    audit.add(
+        "4.1.2 tab pattern",
+        "every panel is labelled by an existing tab",
+        bool(panels) and all(p.attrs.get("aria-labelledby") in by_id for p in panels),
+        f"{len(panels)} panels",
+    )
     selected = sum(1 for t in tabs if t.attrs.get("aria-selected") == "true")
-    audit.add("4.1.2 tab pattern", "exactly one tab is selected on load",
-              selected == 1, f"{selected} selected")
-    audit.add("4.1.2 tab pattern", "tabs live in a tablist",
-              any(e.attrs.get("role") == "tablist" for e in els))
+    audit.add(
+        "4.1.2 tab pattern",
+        "exactly one tab is selected on load",
+        selected == 1,
+        f"{selected} selected",
+    )
+    audit.add(
+        "4.1.2 tab pattern",
+        "tabs live in a tablist",
+        any(e.attrs.get("role") == "tablist" for e in els),
+    )
 
     # 1.3.1 info and relationships - one h1 per panel
     for panel in panels:
         pid = panel.attrs.get("id", "?")
-        audit.add("1.3.1 headings", f"panel {pid} contains a heading",
-                  "<h1" in html.split(f'id="{pid}"', 1)[-1][:4000]
-                  or "<h2" in html.split(f'id="{pid}"', 1)[-1][:4000])
+        audit.add(
+            "1.3.1 headings",
+            f"panel {pid} contains a heading",
+            "<h1" in html.split(f'id="{pid}"', 1)[-1][:4000]
+            or "<h2" in html.split(f'id="{pid}"', 1)[-1][:4000],
+        )
 
     # 4.1.2 accessible names
     unnamed: list[str] = []
@@ -241,25 +265,43 @@ def audit_markup(html: str, audit: Audit) -> None:
             continue
         if not _accessible_name(el, id_text, labels_for):
             unnamed.append(f"<{el.tag}> line {el.line}")
-    audit.add("4.1.2 accessible name", "every interactive element has a name",
-              not unnamed, ", ".join(unnamed) if unnamed else "all named")
-    audit.add("3.3.2 labels or instructions", "every form control has a <label for>",
-              all(el.attrs.get("id") in labels_for or el.attrs.get("aria-label")
-                  for el in els if el.tag in ("select", "textarea")
-                  or (el.tag == "input" and el.attrs.get("type") not in ("hidden", "submit",
-                                                                         "button", "reset"))),
-              f"{len(labels_for)} labelled controls")
+    audit.add(
+        "4.1.2 accessible name",
+        "every interactive element has a name",
+        not unnamed,
+        ", ".join(unnamed) if unnamed else "all named",
+    )
+    audit.add(
+        "3.3.2 labels or instructions",
+        "every form control has a <label for>",
+        all(
+            el.attrs.get("id") in labels_for or el.attrs.get("aria-label")
+            for el in els
+            if el.tag in ("select", "textarea")
+            or (
+                el.tag == "input"
+                and el.attrs.get("type") not in ("hidden", "submit", "button", "reset")
+            )
+        ),
+        f"{len(labels_for)} labelled controls",
+    )
 
     # 1.1.1 decorative marks are hidden from assistive technology
     marks = [e for e in els if "brand-mark" in e.attrs.get("class", "")]
-    audit.add("1.1.1 non-text content", "decorative marks are aria-hidden",
-              all(m.attrs.get("aria-hidden") == "true" for m in marks),
-              f"{len(marks)} decorative marks")
+    audit.add(
+        "1.1.1 non-text content",
+        "decorative marks are aria-hidden",
+        all(m.attrs.get("aria-hidden") == "true" for m in marks),
+        f"{len(marks)} decorative marks",
+    )
 
     # 4.1.3 status messages
-    audit.add("4.1.3 status messages", "live regions announce asynchronous updates",
-              any(e.attrs.get("aria-live") or e.attrs.get("role") == "status" for e in els),
-              f"{sum(1 for e in els if e.attrs.get('aria-live'))} live regions")
+    audit.add(
+        "4.1.3 status messages",
+        "live regions announce asynchronous updates",
+        any(e.attrs.get("aria-live") or e.attrs.get("role") == "status" for e in els),
+        f"{sum(1 for e in els if e.attrs.get('aria-live'))} live regions",
+    )
 
 
 def audit_stylesheet(css: str, audit: Audit) -> dict[str, dict[str, float]]:
@@ -269,33 +311,55 @@ def audit_stylesheet(css: str, audit: Audit) -> dict[str, dict[str, float]]:
         tokens = pal[scheme]
         for label, ink, bg, minimum in PAIRS:
             if ink not in tokens or bg not in tokens:
-                audit.add("1.4.3 contrast", f"{scheme}: {label} tokens defined", False,
-                          f"missing {ink if ink not in tokens else bg}")
+                audit.add(
+                    "1.4.3 contrast",
+                    f"{scheme}: {label} tokens defined",
+                    False,
+                    f"missing {ink if ink not in tokens else bg}",
+                )
                 continue
             ratio = contrast_ratio(tokens[ink], tokens[bg])
             ratios[scheme][label] = round(ratio, 2)
-            audit.add("1.4.3 contrast" if minimum >= 4.5 else "1.4.11 non-text contrast",
-                      f"{scheme}: {label} >= {minimum}:1",
-                      ratio >= minimum, f"{ratio:.2f}:1")
+            audit.add(
+                "1.4.3 contrast" if minimum >= 4.5 else "1.4.11 non-text contrast",
+                f"{scheme}: {label} >= {minimum}:1",
+                ratio >= minimum,
+                f"{ratio:.2f}:1",
+            )
 
     # 2.4.7 focus visible
-    audit.add("2.4.7 focus visible", "focus-visible outline is at least 2px",
-              bool(re.search(r":focus-visible\s*\{[^}]*outline:\s*[3-9]px", css, re.S)))
+    audit.add(
+        "2.4.7 focus visible",
+        "focus-visible outline is at least 2px",
+        bool(re.search(r":focus-visible\s*\{[^}]*outline:\s*[3-9]px", css, re.S)),
+    )
     # 2.3.3 / 2.2.2 motion
     animated = re.findall(r"(animation|transition):", css)
     guarded = re.search(r"prefers-reduced-motion:\s*reduce", css)
-    audit.add("2.3.3 animation from interactions",
-              "reduced-motion preference is honoured",
-              (not animated) or bool(guarded), f"{len(animated)} animated declarations")
+    audit.add(
+        "2.3.3 animation from interactions",
+        "reduced-motion preference is honoured",
+        (not animated) or bool(guarded),
+        f"{len(animated)} animated declarations",
+    )
     # 1.4.12 text spacing / 1.4.4 resize
-    audit.add("1.4.4 resize text", "root font size is relative, not fixed px",
-              bool(re.search(r"html\s*\{[^}]*font-size:\s*100%", css, re.S)))
+    audit.add(
+        "1.4.4 resize text",
+        "root font size is relative, not fixed px",
+        bool(re.search(r"html\s*\{[^}]*font-size:\s*100%", css, re.S)),
+    )
     # 1.4.10 reflow
-    audit.add("1.4.10 reflow", "a narrow-viewport breakpoint exists",
-              bool(re.search(r"@media[^{]*max-width", css)))
+    audit.add(
+        "1.4.10 reflow",
+        "a narrow-viewport breakpoint exists",
+        bool(re.search(r"@media[^{]*max-width", css)),
+    )
     # high contrast mode
-    audit.add("1.4.11 non-text contrast", "forced-colors mode is supported",
-              "forced-colors: active" in css)
+    audit.add(
+        "1.4.11 non-text contrast",
+        "forced-colors mode is supported",
+        "forced-colors: active" in css,
+    )
     return ratios
 
 
@@ -308,37 +372,56 @@ def audit_colour_independence(css: str, js: str, audit: Audit) -> None:
     its colour.
     """
     helper = re.search(r"function\s+statusSpan\s*\([^)]*\)\s*\{(.*?)\n\}", js, re.S)
-    audit.add("1.4.1 use of colour", "statusSpan renders its text argument",
-              bool(helper and "text" in helper.group(1)),
-              "helper found" if helper else "statusSpan not found")
+    audit.add(
+        "1.4.1 use of colour",
+        "statusSpan renders its text argument",
+        bool(helper and "text" in helper.group(1)),
+        "helper found" if helper else "statusSpan not found",
+    )
 
     calls = re.findall(r"statusSpan\(\s*'(\w+)'\s*,\s*([^)]*)\)", js)
     empty = [k for k, arg in calls if not arg.strip() or arg.strip() in ("''", '""')]
-    audit.add("1.4.1 use of colour", "every statusSpan call supplies a label",
-              not empty, f"{len(calls)} call sites")
+    audit.add(
+        "1.4.1 use of colour",
+        "every statusSpan call supplies a label",
+        not empty,
+        f"{len(calls)} call sites",
+    )
 
     coloured = set(re.findall(r"\.(status-\w+)\s*\{[^}]*color:", css))
     glyphed = set(re.findall(r"\.(status-\w+)::before\s*\{[^}]*content:", css))
     missing = sorted(coloured - glyphed)
-    audit.add("1.4.1 use of colour", "every coloured status class also sets a glyph",
-              not missing, ", ".join(missing) if missing else f"{len(coloured)} classes")
+    audit.add(
+        "1.4.1 use of colour",
+        "every coloured status class also sets a glyph",
+        not missing,
+        ", ".join(missing) if missing else f"{len(coloured)} classes",
+    )
 
 
 def audit_behaviour(js: str, audit: Audit) -> None:
     """Rendering behaviour the markup alone cannot show."""
     # 3.1.2: the evidence replay renders programme text in the slice's language
     # inside an lang="en" document, so the language must travel with the text.
-    audit.add("3.1.2 language of parts",
-              "replay text declares the language of the slice it came from",
-              bool(re.search(r"\{\s*lang\s*\}", js)) and "r.slice.language" in js,
-              "lang attribute set from slice")
+    audit.add(
+        "3.1.2 language of parts",
+        "replay text declares the language of the slice it came from",
+        bool(re.search(r"\{\s*lang\s*\}", js)) and "r.slice.language" in js,
+        "lang attribute set from slice",
+    )
     # 2.1.1: the one composite widget must be operable from the keyboard the way
     # the APG tab pattern specifies, not only by clicking.
-    audit.add("2.1.1 keyboard", "tab set supports arrow, Home and End keys",
-              all(k in js for k in ("ArrowRight", "ArrowLeft", "Home", "End")),
-              "APG tab pattern")
-    audit.add("2.4.3 focus order", "no positive tabindex is created at runtime",
-              not re.search(r"tabindex['\"]?\s*[:,]\s*['\"]?[1-9]", js))
+    audit.add(
+        "2.1.1 keyboard",
+        "tab set supports arrow, Home and End keys",
+        all(k in js for k in ("ArrowRight", "ArrowLeft", "Home", "End")),
+        "APG tab pattern",
+    )
+    audit.add(
+        "2.4.3 focus order",
+        "no positive tabindex is created at runtime",
+        not re.search(r"tabindex['\"]?\s*[:,]\s*['\"]?[1-9]", js),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -359,13 +442,13 @@ def run() -> tuple[Audit, dict]:
         "contrast_ratios": ratios,
         "results": [r.__dict__ for r in audit.results],
         "note": "Static audit. Does not replace the manual screen-reader and "
-                "keyboard pass recorded in docs/ACCESSIBILITY_CONFORMANCE.md.",
+        "keyboard pass recorded in docs/ACCESSIBILITY_CONFORMANCE.md.",
     }
     return audit, report
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="AccessPulse UI accessibility audit")
+    ap = argparse.ArgumentParser(description="Raccord UI accessibility audit")
     ap.add_argument("--json", action="store_true", help="emit machine-readable JSON")
     ap.add_argument("--out", type=Path, default=None, help="also write the JSON report here")
     args = ap.parse_args()

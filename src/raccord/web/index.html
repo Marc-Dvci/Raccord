@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Raccord — Accessible Experience Reliability</title>
+<link rel="stylesheet" href="/static/styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>◎</text></svg>">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true">◎</span>
+    <div>
+      <p class="brand-name">Raccord</p>
+      <p class="brand-sub">Accessible Experience Reliability</p>
+    </div>
+  </div>
+  <div class="event-strip" aria-live="polite">
+    <div class="event-chip">
+      <span class="chip-label">Event</span>
+      <span class="chip-value" id="event-name">The Lumière Protocol — World Premiere</span>
+    </div>
+    <div class="event-chip">
+      <span class="chip-label">Programme time</span>
+      <span class="chip-value" id="program-time">—</span>
+    </div>
+    <div class="event-chip">
+      <span class="chip-label">Grafana MCP</span>
+      <span class="chip-value" id="mcp-chip">—</span>
+    </div>
+    <div class="event-chip">
+      <span class="chip-label">Safety mode</span>
+      <span class="chip-value" id="deployment-mode">isolated simulator</span>
+    </div>
+  </div>
+  <div class="topbar-actions">
+    <button type="button" id="btn-judge-demo" class="btn btn-primary">Run judge demo</button>
+    <button type="button" id="btn-tick" class="btn">Advance 20 s</button>
+    <button type="button" id="btn-reset" class="btn btn-quiet">Reset demo</button>
+  </div>
+</header>
+
+<nav class="tabs" aria-label="Sections">
+  <ul role="tablist">
+    <li><button role="tab" aria-selected="true" aria-controls="panel-overview" id="tab-overview">Overview</button></li>
+    <li><button role="tab" aria-selected="false" aria-controls="panel-readiness" id="tab-readiness">Readiness studio</button></li>
+    <li><button role="tab" aria-selected="false" aria-controls="panel-cockpit" id="tab-cockpit">Live cockpit</button></li>
+    <li><button role="tab" aria-selected="false" aria-controls="panel-incident" id="tab-incident">Incident</button></li>
+    <li><button role="tab" aria-selected="false" aria-controls="panel-replay" id="tab-replay">Evidence replay</button></li>
+    <li><button role="tab" aria-selected="false" aria-controls="panel-observability" id="tab-observability">Agent &amp; MCP</button></li>
+    <li><button role="tab" aria-selected="false" aria-controls="panel-benchmark" id="tab-benchmark">Benchmark</button></li>
+  </ul>
+</nav>
+
+<main id="main" tabindex="-1">
+
+  <!-- ================= OVERVIEW ================= -->
+  <section id="panel-overview" role="tabpanel" aria-labelledby="tab-overview">
+    <h1>Global accessible-experience map</h1>
+    <p class="lede">A stream is not healthy unless every promised accessibility experience is
+    healthy. This is what each audience slice is actually receiving right now.</p>
+
+    <div class="stat-row" id="overview-stats"></div>
+
+    <div class="grid-2">
+      <section class="card" aria-labelledby="h-promises">
+        <h2 id="h-promises">Accessibility promise registry</h2>
+        <p class="card-note">Versioned operational contracts. A promise cannot be silently
+        changed once the event has started.</p>
+        <div class="table-wrap">
+          <table id="promise-table">
+            <caption class="visually-hidden">Registered accessibility promises for this event</caption>
+            <thead><tr><th scope="col">Promise</th><th scope="col">Feature</th>
+              <th scope="col">Language</th><th scope="col">Territories</th>
+              <th scope="col">Tier</th><th scope="col">Version</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="h-budget">
+        <h2 id="h-budget">Error budget</h2>
+        <p class="card-note">Each accessibility SLO has an error budget for this event tier.
+        The bar and the number carry the same information; colour is never the only signal.</p>
+        <div id="budget-list"></div>
+      </section>
+    </div>
+
+    <section class="card" aria-labelledby="h-faults">
+      <h2 id="h-faults">Fault library</h2>
+      <p class="card-note">The digital twin can be broken in <span id="fault-count">—</span>
+      documented ways. Pick one to run the closed loop against a real symptom.</p>
+      <div class="field-row">
+        <label for="fault-select">Fault to inject</label>
+        <select id="fault-select"></select>
+        <button type="button" class="btn btn-primary" id="btn-inject">Inject and run event forward</button>
+      </div>
+      <p id="fault-detail" class="hint" aria-live="polite"></p>
+    </section>
+  </section>
+
+  <!-- ================= READINESS ================= -->
+  <section id="panel-readiness" role="tabpanel" aria-labelledby="tab-readiness" hidden>
+    <h1>Event readiness studio</h1>
+    <p class="lede">The Accessibility Release Gate proves every promise works before the event
+    is allowed to say “accessibility ready”. Hard assertions block certification.</p>
+    <button type="button" class="btn btn-primary" id="btn-certify">Run preflight certification</button>
+    <div id="cert-summary" aria-live="polite"></div>
+    <div id="cert-gates"></div>
+  </section>
+
+  <!-- ================= COCKPIT ================= -->
+  <section id="panel-cockpit" role="tabpanel" aria-labelledby="tab-cockpit" hidden>
+    <h1>Live event cockpit</h1>
+    <p class="lede">Audience experience, operational telemetry, agent reasoning and control —
+    kept visually and structurally separate so evidence is never confused with action.</p>
+    <div class="stat-row" id="cockpit-stats"></div>
+    <div class="grid-2">
+      <section class="card" aria-labelledby="h-health">
+        <h2 id="h-health">Feature health</h2>
+        <div class="table-wrap">
+          <table id="health-table">
+            <caption class="visually-hidden">SLO evaluation results by accessibility feature</caption>
+            <thead><tr><th scope="col">Feature</th><th scope="col">Evaluated</th>
+              <th scope="col">Breaching</th><th scope="col">Abstained</th>
+              <th scope="col">Worst SLO</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+      <section class="card" aria-labelledby="h-env">
+        <h2 id="h-env">Delivery environment</h2>
+        <dl id="env-list" class="kv"></dl>
+      </section>
+    </div>
+    <section class="card" aria-labelledby="h-logs">
+      <h2 id="h-logs">Delivery chain logs</h2>
+      <div class="table-wrap log-wrap">
+        <table id="log-table">
+          <caption class="visually-hidden">Recent log lines from the delivery components</caption>
+          <thead><tr><th scope="col">Time</th><th scope="col">Service</th>
+            <th scope="col">Level</th><th scope="col">Line</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </section>
+
+  <!-- ================= INCIDENT ================= -->
+  <section id="panel-incident" role="tabpanel" aria-labelledby="tab-incident" hidden>
+    <h1>Incident workspace</h1>
+    <p class="lede">Evidence, hypothesis, policy, action and verified result are separate,
+    labelled stages. The agent may propose; only policy plus a signed approval may act.</p>
+
+    <div class="field-row">
+      <button type="button" class="btn btn-primary" id="btn-run-loop">Run the full loop</button>
+      <button type="button" class="btn" id="btn-step-detect">1. Detect</button>
+      <button type="button" class="btn" id="btn-step-investigate">2. Evidence</button>
+      <button type="button" class="btn" id="btn-step-diagnose">3. Diagnose</button>
+      <button type="button" class="btn" id="btn-step-policy">4. Policy</button>
+      <button type="button" class="btn" id="btn-step-remediate">6. Remediate</button>
+      <button type="button" class="btn" id="btn-step-verify">7. Verify</button>
+      <button type="button" class="btn" id="btn-step-communicate">8. Communicate</button>
+      <button type="button" class="btn" id="btn-step-review">9. Review</button>
+    </div>
+
+    <ol class="state-machine" id="state-machine" aria-label="Incident state machine"></ol>
+    <p id="incident-status" class="hint" role="status" aria-live="polite"></p>
+
+    <div class="grid-2">
+      <section class="card stage-evidence" aria-labelledby="h-evidence">
+        <h2 id="h-evidence"><span class="stage-tag">Evidence</span> Retrieved through Grafana MCP</h2>
+        <ul id="evidence-list" class="evidence"></ul>
+      </section>
+      <section class="card stage-hypothesis" aria-labelledby="h-hypo">
+        <h2 id="h-hypo"><span class="stage-tag">Hypothesis</span> Ranked diagnosis</h2>
+        <ol id="hypothesis-list" class="hypotheses"></ol>
+        <h3>Change correlation</h3>
+        <ul id="causal-list" class="causal"></ul>
+        <div id="reasoning-body"></div>
+      </section>
+    </div>
+
+    <div class="grid-2">
+      <section class="card stage-policy" aria-labelledby="h-approval">
+        <h2 id="h-approval"><span class="stage-tag">Policy &amp; approval</span> Governed action</h2>
+        <div id="approval-body"></div>
+      </section>
+      <section class="card stage-verify" aria-labelledby="h-verify">
+        <h2 id="h-verify"><span class="stage-tag">Verified result</span> Post-action assertions</h2>
+        <div class="table-wrap">
+          <table id="assertion-table">
+            <caption class="visually-hidden">Verification assertions after the remediation action</caption>
+            <thead><tr><th scope="col">Assertion</th><th scope="col">Scope</th>
+              <th scope="col">Observed</th><th scope="col">Objective</th>
+              <th scope="col">Result</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <section class="card stage-ask" aria-labelledby="h-ask">
+      <h2 id="h-ask"><span class="stage-tag">Interrogate</span> Ask the agent</h2>
+      <p class="card-note">Question the diagnosis. Every answer cites the evidence it rests
+      on and the Grafana MCP tool that produced it. With the Gemini reasoning plane
+      configured, a question the retrieved evidence cannot settle sends the agent back to
+      Grafana MCP for more, on the same audited path as the investigation. This is a read
+      path: it cannot change scope, policy, actions or verification.</p>
+
+      <form id="ask-form" class="ask-form">
+        <label for="ask-input">Your question</label>
+        <div class="field-row">
+          <input type="text" id="ask-input" name="question" maxlength="500" autocomplete="off"
+                 placeholder="Why did you rule out a fixed clock offset?">
+          <button type="submit" class="btn btn-primary" id="btn-ask">Ask</button>
+        </div>
+      </form>
+
+      <div class="field-row ask-suggestions" id="ask-suggestions"></div>
+      <p id="ask-status" class="hint" role="status" aria-live="polite"></p>
+      <div id="ask-log" class="ask-log"></div>
+    </section>
+
+    <section class="card" aria-labelledby="h-comms">
+      <h2 id="h-comms">Communications</h2>
+      <div id="comms-list"></div>
+    </section>
+
+      <section class="card" aria-labelledby="h-review">
+      <h2 id="h-review">Post-incident review</h2>
+      <div id="review-body"></div>
+    </section>
+
+    <section class="card" aria-labelledby="h-audit">
+      <h2 id="h-audit">Audit trail</h2>
+      <p class="card-note" id="audit-chain"></p>
+      <div class="table-wrap">
+        <table id="audit-table">
+          <caption class="visually-hidden">Hash-chained incident audit events</caption>
+          <thead><tr><th scope="col">#</th><th scope="col">Event</th><th scope="col">From</th>
+            <th scope="col">To</th><th scope="col">Actor</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </section>
+
+  <!-- ================= REPLAY ================= -->
+  <section id="panel-replay" role="tabpanel" aria-labelledby="tab-replay" hidden>
+    <h1>Incident evidence replay</h1>
+    <p class="lede">The exact affected interval: what was spoken, what was captioned, and the
+    measured offset between them. This is the screen that turns a number into a decision.</p>
+    <button type="button" class="btn btn-primary" id="btn-replay">Load replay for the open incident</button>
+    <div id="replay-summary" aria-live="polite"></div>
+    <div class="replay-grid">
+      <section class="card" aria-labelledby="h-spoken">
+        <h2 id="h-spoken">Spoken dialogue (reference)</h2>
+        <ol id="reference-list" class="timeline"></ol>
+      </section>
+      <section class="card" aria-labelledby="h-rendered">
+        <h2 id="h-rendered">Rendered captions (delivered)</h2>
+        <ol id="cue-list" class="timeline"></ol>
+      </section>
+    </div>
+  </section>
+
+  <!-- ================= OBSERVABILITY ================= -->
+  <section id="panel-observability" role="tabpanel" aria-labelledby="tab-observability" hidden>
+    <h1>Agent and MCP observability</h1>
+    <p class="lede">Raccord observes the agent it builds. Every Grafana MCP call and every
+    agent step is timed, counted and traced.</p>
+    <div class="stat-row" id="obs-stats"></div>
+    <div class="grid-2">
+      <section class="card" aria-labelledby="h-mcp">
+        <h2 id="h-mcp">Grafana MCP call chain</h2>
+        <p class="card-note" id="mcp-transport-note"></p>
+        <div class="table-wrap">
+          <table id="mcp-table">
+            <caption class="visually-hidden">Grafana MCP tool calls made during the investigation</caption>
+            <thead><tr><th scope="col">#</th><th scope="col">Tool</th>
+              <th scope="col">Latency</th><th scope="col">Bytes</th>
+              <th scope="col">Result</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+      <section class="card" aria-labelledby="h-caps">
+        <h2 id="h-caps">Capabilities resolved on this server</h2>
+        <div class="table-wrap">
+          <table id="cap-table">
+            <caption class="visually-hidden">MCP capabilities required by Raccord and the tool each resolved to</caption>
+            <thead><tr><th scope="col">Capability</th><th scope="col">Required</th>
+              <th scope="col">Resolved tool</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+    <section class="card" aria-labelledby="h-steps">
+      <h2 id="h-steps">Agent steps</h2>
+      <div class="table-wrap">
+        <table id="agent-table">
+          <caption class="visually-hidden">Agent step durations</caption>
+          <thead><tr><th scope="col">Agent</th><th scope="col">Calls</th>
+            <th scope="col">Total time</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </section>
+
+  <!-- ================= BENCHMARK ================= -->
+  <section id="panel-benchmark" role="tabpanel" aria-labelledby="tab-benchmark" hidden>
+    <h1>Benchmark laboratory</h1>
+    <p class="lede">Every claim Raccord makes is measured over a seeded corpus of
+    controlled accessibility incidents, with ablations.</p>
+    <div id="bench-body">
+      <p class="hint">No results loaded. Run <code>raccord bench --scenarios 1000</code>.</p>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <p>Raccord · Apache-2.0 · demonstration media “The Lumière Protocol” is original work
+  created for this project. <a href="/api/status-page">Public accessibility status page</a> ·
+  <a href="/docs">API reference</a> · <a href="/metrics">Prometheus metrics</a></p>
+</footer>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

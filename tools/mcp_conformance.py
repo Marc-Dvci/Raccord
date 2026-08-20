@@ -1,10 +1,10 @@
-"""Check a Grafana MCP server against the capability contract AccessPulse needs.
+"""Check a Grafana MCP server against the capability contract Raccord needs.
 
     python tools/mcp_conformance.py --transport http   --out docs/mcp_conformance.json
     python tools/mcp_conformance.py --transport stdio  --out docs/mcp_conformance.json
     python tools/mcp_conformance.py --transport stub
 
-AccessPulse never hard-codes a Grafana MCP tool name into an agent. It asks for a
+Raccord never hard-codes a Grafana MCP tool name into an agent. It asks for a
 *capability* ("read the firing alert") and `grafana_mcp.client` resolves that
 against whatever the connected server actually advertises (ADR 0002). This tool
 runs only that resolution step and writes down the answer, because the answer is
@@ -29,13 +29,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from accesspulse.config import get_settings  # noqa: E402
-from accesspulse.grafana_mcp.client import (  # noqa: E402
+from raccord.config import get_settings  # noqa: E402
+from raccord.grafana_mcp.client import (  # noqa: E402
     CAPABILITIES,
     MCPUnavailable,
     build_client,
 )
-from accesspulse.telemetry import TelemetryPlane  # noqa: E402
+from raccord.telemetry import TelemetryPlane  # noqa: E402
 
 
 async def probe(transport: str) -> dict:
@@ -77,9 +77,12 @@ async def probe(transport: str) -> dict:
         "generated": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
         "transport": transport,
         "grafana_url": settings.grafana_url if transport != "stub" else "n/a (in-process)",
-        "endpoint": settings.mcp_http_url if transport == "http" else (
+        "endpoint": settings.mcp_http_url
+        if transport == "http"
+        else (
             " ".join([settings.mcp_stdio_command, *settings.mcp_stdio_argv])
-            if transport == "stdio" else "in-process"
+            if transport == "stdio"
+            else "in-process"
         ),
         "connected": connected,
         "detail": detail,
@@ -97,8 +100,10 @@ def render(report: dict) -> None:
     print(f"transport            {report['transport']}")
     print(f"endpoint             {report['endpoint']}")
     print(f"server tools         {report['server_tool_count']}")
-    print(f"capabilities         {report['capabilities_resolved']}"
-          f"/{report['capabilities_total']} resolved")
+    print(
+        f"capabilities         {report['capabilities_resolved']}"
+        f"/{report['capabilities_total']} resolved"
+    )
     print()
     width = max(len(r["capability"]) for r in report["resolution"])
     for r in report["resolution"]:
@@ -108,10 +113,11 @@ def render(report: dict) -> None:
         print(f"  {mark} {r['capability']:<{width}}  {req:<8}  {target}")
     if report["required_unresolved"]:
         print()
-        print("REQUIRED capabilities this server cannot provide: "
-              + ", ".join(report["required_unresolved"]))
-        print("An investigation cannot leave SCOPED against this server "
-              "(src/accesspulse/incident.py).")
+        print(
+            "REQUIRED capabilities this server cannot provide: "
+            + ", ".join(report["required_unresolved"])
+        )
+        print("An investigation cannot leave SCOPED against this server (src/raccord/incident.py).")
 
 
 def main() -> int:
