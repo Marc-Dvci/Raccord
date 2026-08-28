@@ -13,7 +13,7 @@ grafana_cloud_instance_id    = "REPLACE_WITH_INSTANCE_ID"
 agento11y_endpoint           = "https://REPLACE_WITH_AGENT_OBSERVABILITY_ENDPOINT"
 
 reasoning_mode         = "gemini"
-gemini_model           = "gemini-3.1-pro-preview"
+gemini_model           = "gemini-3.7-flash"
 gemini_location        = "global"
 agent_engine_location  = "us-central1"
 agent_engine_resource  = ""

@@ -646,7 +646,7 @@ function wire() {
     try {
       const data = await api('/api/demo/run', {
         method: 'POST',
-        body: JSON.stringify({ fault_id: $('#fault-select').value, ticks: 9,
+        body: JSON.stringify({ fault_id: $('#fault-select').value, ticks: 6,
           seconds_per_tick: 20 }),
       });
       renderIncident(data);

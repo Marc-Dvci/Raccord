@@ -15,4 +15,5 @@ var
 *.pem
 *.token
 bench/results
+!bench/results/summary.json
 docs/screenshots/*.png

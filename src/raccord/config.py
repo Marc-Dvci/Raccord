@@ -29,9 +29,11 @@ class Settings(BaseSettings):
 
     # Reasoning plane -------------------------------------------------------
     reasoning_mode: Literal["offline", "gemini"] = "offline"
-    # Gemini 3.1 Pro is Google's most capable reasoning model as of the contest
-    # build. It is preview; operators can select the GA fallback in one env var.
-    gemini_model: str = "gemini-3.1-pro-preview"
+    # Gemini 3.7 Flash is the current GA agentic workhorse on Google's global
+    # endpoint. It supersedes the preview-only 3.1 Pro default and avoids
+    # unsupported 3.x sampling parameters by relying on the model's MEDIUM
+    # thinking-level default. Keep it configurable for lifecycle migrations.
+    gemini_model: str = "gemini-3.7-flash"
     gemini_location: str = "global"
     agent_engine_resource: str = ""
     agent_engine_location: str = "us-central1"

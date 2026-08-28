@@ -15,7 +15,7 @@ lives.
 | Character-trigram language identifier | in `probes/text.py` | Flags wrong-language delivery | No |
 | Hashed n-gram embedding | in `probes/text.py` | Semantic-preservation signal | No |
 | Diagnosis ranker | in `agents/core.py` | Ranks hypotheses with posteriors | Ranks; the policy engine decides |
-| Gemini reasoning plane | `gemini-3.1-pro-preview` via Vertex AI | Synthesis, uncertainty, communications, operator Q&A, learning | **No** — see [THREAT_MODEL.md](THREAT_MODEL.md) §5 |
+| Gemini reasoning plane | `gemini-3.7-flash` via Google Cloud | Synthesis, uncertainty, communications, operator Q&A, learning | **No** — see [THREAT_MODEL.md](THREAT_MODEL.md) §5 |
 
 ---
 
@@ -142,8 +142,8 @@ are worth once the rest of the system consumes them. The ablation that removes p
 
 ## 5. The reasoning plane (Gemini)
 
-**Model:** `gemini-3.1-pro-preview` on Vertex AI, reached through the Agent Development Kit.
-`gemini-2.5-pro` remains a configurable GA fallback. Optional —
+**Model:** `gemini-3.7-flash` on Google Cloud's global endpoint, reached through the Agent Development Kit. The model uses its supported default `MEDIUM` thinking level; Raccord sends none of the sampling or candidate parameters deprecated or rejected by Gemini 3.7.
+`gemini-3.6-flash` remains a configurable GA fallback. Optional —
 `RACCORD_REASONING_MODE=offline` is the default and runs the whole loop deterministically.
 
 **Given:** the typed incident record — SLO evaluations, probe findings with their confidence and

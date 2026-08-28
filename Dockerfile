@@ -18,6 +18,9 @@ ENV PIP_DISABLE_PIP_VERSION_CHECK=1 PIP_NO_CACHE_DIR=1
 
 COPY pyproject.toml README.md LICENSE ./
 COPY src ./src
+# Package the judge-facing benchmark proof inside the installed wheel. Reading
+# a repository-relative path works in editable installs but not in /opt/venv.
+COPY bench/results/summary.json ./src/raccord/data/benchmark_summary.json
 
 RUN python -m venv /opt/venv \
  && /opt/venv/bin/pip install --upgrade pip \

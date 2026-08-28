@@ -50,14 +50,14 @@ variable "agent_deployer_principals" {
 
 variable "gemini_model" {
   type        = string
-  default     = "gemini-3.1-pro-preview"
-  description = "Gemini reasoning model. Set gemini-2.5-pro for the GA fallback."
+  default     = "gemini-3.7-flash"
+  description = "GA Gemini agentic reasoning model. Set gemini-3.6-flash only for a constrained-region fallback."
 }
 
 variable "gemini_location" {
   type        = string
   default     = "global"
-  description = "Vertex Gemini endpoint location; Gemini 3.1 Pro Preview is global."
+  description = "Google Cloud Gemini endpoint location; Gemini 3.7 Flash supports the global endpoint."
 }
 
 variable "public_demo" {

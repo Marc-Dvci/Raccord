@@ -16,6 +16,14 @@ from raccord.twin import attach_promises, build_reference_twin
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def test_release_image_includes_judge_benchmark_summary():
+    dockerfile = (ROOT / "Dockerfile").read_text(encoding="utf-8")
+    dockerignore = (ROOT / ".dockerignore").read_text(encoding="utf-8")
+    expected = "COPY bench/results/summary.json ./src/raccord/data/benchmark_summary.json"
+    assert expected in dockerfile
+    assert "!bench/results/summary.json" in dockerignore
+
+
 @pytest.fixture
 def registry(tmp_path):
     return PromiseRegistry(tmp_path / "promises.db")

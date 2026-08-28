@@ -751,8 +751,9 @@ async def status_page() -> HTMLResponse:
 @app.get("/api/benchmark")
 async def benchmark() -> dict:
     path = get_settings().data_dir / "bench" / "summary.json"
+    package_copy = Path(__file__).resolve().parent / "data" / "benchmark_summary.json"
     repo_copy = Path(__file__).resolve().parents[2] / "bench" / "results" / "summary.json"
-    for candidate in (path, repo_copy):
+    for candidate in (path, package_copy, repo_copy):
         if candidate.exists():
             return json.loads(candidate.read_text(encoding="utf-8"))
     raise HTTPException(404, "no benchmark results yet; run `raccord bench`")
