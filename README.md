@@ -447,8 +447,6 @@ docs/                 architecture, MCP chain, benchmark, performance, threat mo
 | [ACCESSIBILITY_CONFORMANCE.md](docs/ACCESSIBILITY_CONFORMANCE.md) | the product's own WCAG 2.2 AA conformance |
 | [model_card.md](docs/model_card.md) · [dataset_card.md](docs/dataset_card.md) | the measurement models and their training data |
 | [MEDIA_RIGHTS.md](docs/MEDIA_RIGHTS.md) | provenance of every asset — all original |
-| [DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md) · [RECORDING_CHECKLIST.md](docs/RECORDING_CHECKLIST.md) | the three-minute demonstration, and how to record it |
-| [screenshots/](docs/screenshots/) | the seven product views — `python tools/capture_screenshots.py` regenerates them from a live run |
 | [adr/](docs/adr/) | twelve architecture decision records |
 | [`sbom.json`](sbom.json) | CycloneDX software bill of materials — `python tools/generate_sbom.py` |
 

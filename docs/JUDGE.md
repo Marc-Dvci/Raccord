@@ -262,7 +262,6 @@ See [CLOUD_DEPLOYMENT.md](CLOUD_DEPLOYMENT.md). Every command is explicitly pinn
 | Is the media licensed? | [MEDIA_RIGHTS.md](MEDIA_RIGHTS.md) — every asset is original; nothing third-party |
 | Why is it built this way? | [adr/](adr/) — twelve decisions with the alternatives rejected |
 | What is it made of? | [`sbom.json`](../sbom.json) |
-| How do I record the demo? | [DEMO_SCRIPT.md](DEMO_SCRIPT.md) |
 
 ---
 

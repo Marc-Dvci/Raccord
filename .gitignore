@@ -40,3 +40,10 @@ ebpf/*.bpf.o
 # docs/BENCHMARK.md, and a repository that documents results it does not ship is
 # asking to be taken on trust. Only scratch output from ad-hoc runs is ignored.
 bench/results/tmp/
+
+# Recording artefacts and screenshots kept local, not part of the public repo.
+demo_video/
+docs/demo_subtitles.srt
+docs/screenshots/
+docs/DEMO_SCRIPT.md
+docs/RECORDING_CHECKLIST.md
