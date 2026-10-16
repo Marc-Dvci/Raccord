@@ -3,7 +3,7 @@
 **Accessible Experience Reliability for live media.**
 A stream is not healthy unless every promised accessibility experience is healthy.
 
-> **Agentic Cinema — Grafana track.**
+> **2nd place, Grafana track — Agentic Cinema: The Blockbuster Hackathon.**
 > Raccord certifies, monitors, diagnoses, repairs and *proves* the accessibility of a live
 > media experience. It investigates through the **official Grafana MCP server**, reasons with
 > **Gemini on Google Cloud via the Agent Development Kit**, and closes every incident with a
